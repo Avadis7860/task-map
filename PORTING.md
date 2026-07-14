@@ -10,8 +10,9 @@ généralisation appliqué.
   DAG `depends_on`, phases d'épic, `SERVICES`/`CATEGORIES`.
 - **Parseur frontmatter** : le vault utilise `lib/vault_content.split_frontmatter` → à réécrire **stdlib-pur
   interne** (le repo reste `dependencies=[]`).
-- **Reste au vault** : les données (`.claude/tasks/`), le wrapper (`task_map.py`, P6), le hook `session-start`
-  (P7), le manifeste north-star (données vault, P3).
+- **Reste au vault** : les données (`.claude/tasks/`, **+ le manifeste north-star `.claude/northstar.yaml`**,
+  porté P3), le wrapper (`task_map.py`, P6), le hook `session-start` (P7). Le moteur, lui, sait **charger** ce
+  manifeste (générique) mais ne le possède pas.
 
 ## Design de référence
 
@@ -27,7 +28,7 @@ motor read+WRITE confiné, MCP link-by-reference, blueprint `deterministic-tooli
 | `frontmatter` (parseur stdlib-pur) | P1 | **porté** (remplace PyYAML ; parité prouvée sur 464 fichiers) |
 | `graph` + `classify` (moteur) | P1 | **porté** (1:1 de `vault_tasks.py` ; READ-ONLY ; non-régression prouvée) |
 | vocab externalisé (`.taskmap.toml`) | P2 | **porté** (vocab + `tasks_subdir` → config ; défauts permissifs ; parité re-prouvée) |
-| manifeste north-star | P3 | à faire (données vault) |
+| manifeste north-star (loader/validateur) | P3 | **porté** (`northstar.py` : loader stdlib + prédicats purs + rollup ; donnée vault) |
 | `authoring` (écriture STAMP) | P4 | à faire (gated par `stamp-write-model-reconcile`) |
 | verbes `context`/`rollup`/`doctor` | P5 | à faire (+ résolution MCP du ref blueprint) |
 | wrapper vault `task_map.py` | P6 | à faire (reste au vault) |
@@ -55,6 +56,13 @@ motor read+WRITE confiné, MCP link-by-reference, blueprint `deterministic-tooli
   vault déclare son vocab fermé dans son propre `.taskmap.toml` (mirroir de `vault_tasks.py`) → **parité
   conservée**. `_rank_key`/`_ready` reçoivent l'ordre des priorités en paramètre (plus de `PRIO` global). La
   carte épics→axes reste DÉLIBÉRÉMENT hors config (donnée north-star, un seul foyer → P3).
+- **#4 — manifeste north-star chargé, pas possédé (P3)** : le moteur gagne `taskmap/northstar.py` (loader
+  stdlib via `frontmatter.load`, validateurs = prédicats purs, rollup `axis_for_epic` cardinalité-1, selftest)
+  et la table `[northstar]` de config (`Config.northstar_manifest`, absent ⇒ pas de rollup). La **donnée**
+  (`.claude/northstar.yaml`) et la **prose SoT** (`corpus/decision/meta/*north-star*`) restent au vault —
+  SoT-and-derive (I1) : la prose narre, le YAML dérive, l'`axis` d'une task est dérivé (épic→axe), jamais
+  stocké. Recadrage vault du même jour : la prose v2/v3 (substrat Proxmox) a été réalignée en une décision
+  **north-star lightweight** avant projection (cf. `2026-07-14--framework-north-star-lightweight.md`).
 
 ## Preuve de non-régression (P1 · re-vérifiée P2)
 

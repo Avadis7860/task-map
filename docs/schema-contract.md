@@ -75,6 +75,35 @@ un vocab hors liste est signalé puis rangé en dernier. `services`/`categories`
 **vide = permissif** : la validation ne se déclenche que si la liste est fournie. Le vault, lui, déclare son
 vocab fermé pour conserver ses avertissements à l'identique (parité avec le moteur d'origine).
 
+## Manifeste north-star — `.claude/northstar.yaml` *(P3)*
+
+Donnée **du repo cible** (pas du moteur), pointée par `.taskmap.toml [northstar].manifest` (absent ⇒ pas de
+rollup, dégradation honnête). C'est la **projection** de la SoT prose (les décisions north-star du repo) ;
+manifeste **sec** (enums/flags/listes de noms, zéro prose). Chargé + validé par `taskmap/northstar.py`. Porte
+son **propre** `schema_version` (ici `1.0`), distinct du `SCHEMA_VERSION` du contrat de sortie taskmap.
+
+```yaml
+schema_version: "1.0"
+prose_sot: [<id-décision>, …]          # pointeurs vers la SoT narrative (traçabilité, non consommé par le rollup)
+axes:
+  - {id: <axe>, order: 1}                              # ORDONNÉ ; flags booléens optionnels ci-dessous
+  - {id: <axe>, order: 3, differentiator: true, underweighted: true}
+  - {id: <axe>, order: 4, additive: true}
+epics:
+  <ROADMAP-id>: {axis: <axe>}                          # axe PRIMAIRE (cardinalité 1, drive le rollup)
+  <ROADMAP-id>: {axis: <axe>, also_serves: [<axe>, …]} # multi-axe documenté (informatif)
+gates:
+  <gate-id>: {judges: [<axe>, …]}                      # quels axes ce gate juge
+doctrine: [<nom>, …]                                    # méthode transversale (pas un axe)
+```
+
+**Sémantique** : `axis_for_epic(epic)` = l'axe **primaire** de l'épic (rollup consommé par `context`/`rollup` en
+P5), `None` si l'épic n'est pas dans la carte (**honnête**, jamais deviné). La carte ne liste que les epics
+**vivants** ; le **statut** live est délégué au graphe, jamais figé ici. La **priorité** d'un épic n'est PAS
+portée (SoT unique = son frontmatter). **Validation** (prédicats purs, `validate` → liste d'erreurs, vide =
+cohérent) : ids d'axes uniques ; tout `epic.axis`/`also_serves`/`gate.judges` ∈ axes — un **lien mort est
+signalé, jamais inventé**.
+
 ## Quels fichiers sont versionnés
 
 taskmap **n'écrit pas d'index dérivé** (lecture live). Les seuls artefacts qu'il peut écrire (module `authoring`,

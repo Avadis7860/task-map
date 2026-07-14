@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import datetime
 
-from taskmap.frontmatter import split_frontmatter
+from taskmap.frontmatter import load, split_frontmatter
 
 
 def _fm(text: str) -> dict:
@@ -92,3 +92,20 @@ def test_folded_block_scalar_strip():
 def test_folded_block_scalar_clip_default():
     fm = _fm("note: >\n  une ligne")
     assert fm["note"] == "une ligne\n"                 # clip (défaut) → un seul saut final
+
+
+def test_load_fenceless_nested_document():
+    """`load` parse un doc YAML complet SANS fences (le manifeste) : maps-de-maps + seqs imbriqués."""
+    doc = (
+        'schema_version: "1.0"\n'
+        "axes:\n"
+        "  - {id: a1, order: 1}\n"
+        "  - {id: a2, order: 2, differentiator: true}\n"
+        "epics:\n"
+        "  ROADMAP-x: {axis: a1, also_serves: [a2]}\n"
+    )
+    data = load(doc)
+    assert data["schema_version"] == "1.0"
+    assert data["axes"] == [{"id": "a1", "order": 1}, {"id": "a2", "order": 2, "differentiator": True}]
+    assert data["epics"]["ROADMAP-x"] == {"axis": "a1", "also_serves": ["a2"]}
+    assert load("") == {}                              # doc vide → {}

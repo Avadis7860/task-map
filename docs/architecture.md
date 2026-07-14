@@ -57,6 +57,12 @@ dupliquée). Le modèle de données figé (slots, cardinalités, vocab) est le *
 
   Lecture seule, live. **Non-régression prouvée** par `tools/parity_check.py` (sortie identique au moteur
   vault sur le corpus réel — diff vide sur 464 tasks).
+- **`northstar`** (P3, présent) — charge le **manifeste north-star** du repo cible (`.taskmap.toml
+  [northstar].manifest`, ex. `.claude/northstar.yaml`) : **axes** + carte **épic→axe** (rollup) + **gates** +
+  doctrine. Loader stdlib (`frontmatter.load`), **validateurs = prédicats purs** (lien mort signalé, jamais
+  deviné), rollup **`axis_for_epic`** (cardinalité 1 = axe primaire), `selftest`. **SoT-and-derive** (I1) : la
+  prose narre (décisions north-star du repo), ce YAML dérive ; l'`axis` d'une task est **dérivé**, jamais
+  stocké. La carte ne liste que les epics **vivants** ; le statut est délégué au graphe (jamais figé).
 - **`authoring`** (P4, **gated** par le deep-dive `stamp-write-model-reconcile`) — pose/mute les slots STAMP.
   Écriture **atomique** (write-to-temp + rename), `--dry-run`, idempotente, **jamais de commit** (le vault
   s'édite par git). Module séparé du moteur de lecture (confine l'écart read-only de la famille).

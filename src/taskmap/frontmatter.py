@@ -40,6 +40,15 @@ def split_frontmatter(text: str) -> tuple[dict, str]:
     return {}, text
 
 
+def load(text: str) -> Any:
+    """Parse un document YAML COMPLET (sans fences `---`) → la valeur racine.
+
+    Même sous-ensemble que `split_frontmatter` (block-maps/seqs, flow, scalaires typés, blocs `|`/`>`), mais
+    pour un doc AUTONOME — un manifeste, pas un frontmatter. Réutilise le parseur récursif interne ; un doc
+    vide résout en {}. Sert le manifeste north-star (`northstar.load_manifest`) sans ajouter de dépendance."""
+    return _parse(text)
+
+
 # --- tokenisation ------------------------------------------------------------------------------------------
 
 def _strip_comment(raw: str) -> str:

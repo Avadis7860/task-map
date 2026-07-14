@@ -1,0 +1,11 @@
+schema_version: "1.0"
+
+axes:
+  - {id: alpha, order: 1}
+
+epics:
+  ROADMAP-dead: {axis: nonexistent}
+  ROADMAP-ok: {axis: alpha, also_serves: [phantom]}
+
+gates:
+  gate-bad: {judges: [ghost, alpha]}

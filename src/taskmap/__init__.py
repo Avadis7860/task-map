@@ -14,9 +14,10 @@ from __future__ import annotations
 from taskmap.classify import classify, evaluate_dod_criteria, evaluate_trigger
 from taskmap.config import Config
 from taskmap.graph import ENGINE, load_tasks
+from taskmap.northstar import Manifest, axis_for_epic, load_manifest, validate
 
-__all__ = ["ENGINE", "SCHEMA_VERSION", "Config", "__version__", "classify", "evaluate_dod_criteria",
-           "evaluate_trigger", "load_tasks"]
+__all__ = ["ENGINE", "SCHEMA_VERSION", "Config", "Manifest", "__version__", "axis_for_epic", "classify",
+           "evaluate_dod_criteria", "evaluate_trigger", "load_manifest", "load_tasks", "validate"]
 
 __version__ = "0.1.0"
 

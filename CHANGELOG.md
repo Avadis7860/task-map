@@ -4,6 +4,23 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
 
 ## [Non publié]
 
+### Ajouté (P3 — manifeste north-star)
+- **`taskmap/northstar.py`** *(neuf)* : charge + valide le **manifeste north-star** du repo cible (axes + carte
+  épic→axe + gates + doctrine). `load_manifest(path)` → `Manifest` (dataclasses `Axis`/`Manifest`) via le
+  parseur stdlib ; **validateurs = prédicats purs** (`validate` → liste d'erreurs : `epic.axis`/`also_serves`/
+  `gate.judges` hors axes, axe dupliqué, épic sans axe — **lien mort signalé, jamais deviné**) ; rollup pur
+  **`axis_for_epic`** (cardinalité 1 = axe primaire ; hors carte → `None` honnête) ; **`selftest()`** in-module.
+- **`taskmap/frontmatter.py`** : entrée `load(text)` — parse un **doc YAML complet sans fences** (le manifeste)
+  en réutilisant le parseur récursif interne. Zéro dépendance ajoutée (`dependencies=[]` tenu).
+- **`taskmap/config.py`** : table **`[northstar]`** de `.taskmap.toml` → champ `Config.northstar_manifest`
+  (chemin relatif à la racine ; absent ⇒ `None` ⇒ pas de rollup, dégradation honnête).
+- **API publique** : `load_manifest`, `axis_for_epic`, `validate`, `Manifest` re-exportés depuis `taskmap`.
+  `SCHEMA_VERSION` du contrat inchangé (`0.1.0`) — le manifeste porte son **propre** `schema_version` (`1.0`).
+- Filet : `tests/test_northstar.py` (loader, flags, validateur de liens morts, rollup) + `tests/fixtures/
+  northstar/{valid,broken}.yaml` + un cas `load` sans-fences dans `tests/test_frontmatter.py`.
+- **SoT-and-derive (I1)** : la SoT reste la **prose** (`corpus/decision/meta/*north-star*` côté vault) ; le YAML
+  en est la projection vérifiable. Le manifeste réel du vault valide **sans lien mort** (rollup + flags corrects).
+
 ### Ajouté (P2 — config générique du vocab)
 - **`taskmap/config.py`** : le **vocab métier** (priorités ordonnées, services, catégories) et l'**emplacement
   des buckets** (`tasks_subdir`) sont externalisés en `.taskmap.toml` (tables `[vocab]`/`[tasks]`) — jusque-là
@@ -55,7 +72,6 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
   `NotImplementedError`).
 
 ### En cours (port depuis le vault, phase par phase — cf. ROADMAP-task-map)
-- **P3** manifeste north-star (axes + carte épics→axes) · **P4** module `authoring` (écriture des slots STAMP,
-  atomique, jamais de commit — gated) · **P5** logique CLI réelle (`context`/`rollup`/`doctor` + résolution MCP
-  du ref blueprint) · **P6** wrapper vault · **P7** rewire du hook session-start · **P8** backfill + adoption
-  cockpit.
+- **P4** module `authoring` (écriture des slots STAMP, atomique, jamais de commit — gated) · **P5** logique CLI
+  réelle (`context`/`rollup`/`doctor` : câble le rollup `axis_for_epic` + résolution MCP du ref blueprint) ·
+  **P6** wrapper vault · **P7** rewire du hook session-start · **P8** backfill + adoption cockpit.

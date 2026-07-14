@@ -1,0 +1,17 @@
+schema_version: "1.0"
+prose_sot: [ns-a, ns-b]
+
+axes:
+  - {id: alpha, order: 1}
+  - {id: beta, order: 2, differentiator: true, underweighted: true}
+  - {id: gamma, order: 3, additive: true}
+
+epics:
+  ROADMAP-one: {axis: alpha}
+  ROADMAP-two: {axis: beta, also_serves: [gamma]}
+
+gates:
+  gate-x: {judges: [alpha, beta]}
+  gate-y: {judges: [gamma]}
+
+doctrine: [d1, d2]
