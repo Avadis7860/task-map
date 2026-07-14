@@ -22,7 +22,15 @@ import re
 from pathlib import Path
 
 from taskmap.config import Config  # vocab (priorités/services/catégories) + emplacement des tasks
+from taskmap.core.graph import detect_cycles  # cœur générique (détection de cycles) — re-exporté ici
 from taskmap.frontmatter import split_frontmatter  # home unique du parsing frontmatter (stdlib-pur)
+
+__all__ = [  # `detect_cycles` re-exportée du cœur pour la back-compat (imports historiques + test_graph)
+    "detect_cycles",
+    "load_tasks",
+    "derive_phase_deps",
+    "reconcile_epics",
+]
 
 ENGINE = "task-graph-v1"
 BUCKETS = ("backlog", "active", "archive")   # ordre de charge : archive (done) gagne sur backlog
@@ -213,31 +221,6 @@ def derive_phase_deps(index: dict[str, dict]) -> list[str]:
                     m["phase_deps"].setdefault(dep, epic_id)
             seen.extend(step)
     return warnings
-
-
-def detect_cycles(index: dict[str, dict]) -> set[str]:
-    """Membres d'un cycle de dépendances (DFS colorée ; arêtes dangling ignorées). Graphes petits."""
-    color: dict[str, int] = {}   # 0 white / 1 grey / 2 black
-    members: set[str] = set()
-
-    def visit(u: str, path: list[str]) -> None:
-        color[u] = 1
-        path.append(u)
-        for v in index[u]["depends_on"]:
-            if v not in index:
-                continue
-            if color.get(v, 0) == 1:          # back-edge → cycle
-                if v in path:
-                    members.update(path[path.index(v):])
-            elif color.get(v, 0) == 0:
-                visit(v, path)
-        color[u] = 2
-        path.pop()
-
-    for t in index:
-        if color.get(t, 0) == 0:
-            visit(t, [])
-    return members
 
 
 def _children(index: dict[str, dict], epic_id: str) -> list[dict]:

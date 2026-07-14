@@ -46,6 +46,14 @@ dupliquée). Le modèle de données figé (slots, cardinalités, vocab) est le *
   jusque-là codés en dur dans `graph.py`. Défauts **permissifs** : sans fichier, services/catégories sont vides
   ⇒ aucune validation ni warning (un repo tiers n'est jamais réprimandé pour un vocab non déclaré) ; le vault
   déclare son vocab FERMÉ dans son `.taskmap.toml` et garde ses avertissements. Zéro dépendance.
+  - **`core/graph`** — le **cœur de graphe GÉNÉRIQUE** (stdlib-pur, zéro import taskmap), foyer public
+    consommable **cross-repo** : `detect_cycles` (déplacée de `graph.py`, re-exportée pour la back-compat),
+    **`eff_prio`** (priorité **effective transitive** : une task qui débloque plus prioritaire remonte) et le
+    **rang canonique** `rank_key`/`rank_ready`/`resolve_next`. Ce cœur ne connaît ni markdown ni STAMP — juste
+    une forme de record minimale (`id`/`depends_on`/`priority`/`created`/`optional`). Le vault le nourrit via
+    `classify` ; un tiers (le cockpit) le nourrit avec ses propres rows projetés → **une seule copie vivante du
+    moteur, dé-fork par import runtime** au lieu d'un fork vendoré. `eff_prio` est **graduée** du fork cockpit
+    (distillation-vers-le-centre) : la bonne idée du fork monte dans le SoT.
 - **`graph` + `classify` + `frontmatter`** (P1, présent) — port du moteur `vault_tasks.py`, scindé :
   - **`frontmatter`** parse le frontmatter YAML **en stdlib pur** (remplace PyYAML → le repo reste
     `dependencies=[]`) ; ne couvre que le sous-ensemble utilisé (maps, seqs, flow-seqs, scalaires typés

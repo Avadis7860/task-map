@@ -13,7 +13,8 @@ from datetime import date
 from pathlib import Path
 
 from taskmap.config import DEFAULT_PRIO
-from taskmap.graph import ROADMAP_PREFIX, SAFE_ENV, _children, detect_cycles
+from taskmap.core.graph import detect_cycles, rank_ready  # cœur générique (cycles + rang canonique eff_prio)
+from taskmap.graph import ROADMAP_PREFIX, SAFE_ENV, _children
 
 TRIGGER_OPS = (">=", ">", "==")              # opérateurs autorisés de `glob_count`
 
@@ -180,11 +181,6 @@ def classify(index: dict[str, dict], root: Path | None = None,
     return out
 
 
-def _rank_key(t: dict, prio: dict[str, int]):
-    """Clé de tri d'une task : (rang de priorité selon `prio`, optionnel après, date de création)."""
-    return (prio.get(t["priority"], len(prio)), 1 if t["optional"] else 0, t["created"] or "9999-99-99")
-
-
 def _in_scope(t: dict, scope: str | None) -> bool:
     """Filtre de portée du resolver. `scope` : None → toute task ; `env:<name>` → tasks du projet <name>
     (orchestrateur = env vide/`vault`), <name> kebab-validé (garde anti-traversal) ; sinon → préfixe d'id.
@@ -201,9 +197,10 @@ def _in_scope(t: dict, scope: str | None) -> bool:
 
 def _ready(classified: dict[str, dict], scope: str | None,
            prio: dict[str, int] = DEFAULT_PRIO) -> list[dict]:
-    """Tasks READY dans `scope`, triées par priorité (`prio` = ordre issu de la config ; défaut P0…P3)."""
-    return sorted((t for t in classified.values() if t["state"] == "READY" and _in_scope(t, scope)),
-                  key=lambda t: _rank_key(t, prio))
+    """Tasks READY dans `scope`, triées par le rang canonique du cœur (`eff_prio` + tiebreaks). `prio` =
+    ordre issu de la config (défaut P0…P3). Adaptateur mince : traduit le `scope` STAMP en prédicat, délègue
+    le rang à `taskmap.core.graph.rank_ready` (source unique, partagée avec le consommateur cockpit)."""
+    return rank_ready(classified, prio, scope_pred=lambda t: _in_scope(t, scope))
 
 
 def tree_stats(classified: dict[str, dict], scope: str | None = None) -> dict[str, int]:
