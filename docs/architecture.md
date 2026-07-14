@@ -34,16 +34,25 @@ dupliquée). Le modèle de données figé (slots, cardinalités, vocab) est le *
    (lecture des liaisons)  (écriture des slots STAMP,        [P5, intégration
         │                   confiné, jamais de commit — P4)   optionnelle, honnête]
         ▼
-   graph + classify   (moteur porté de vault_tasks.py : DAG depends_on, phases d'épic,
-        │             classification — P1)
+   graph + classify + frontmatter   (moteur porté de vault_tasks.py : DAG depends_on, phases
+        │             d'épic, classification, parseur stdlib — P1, présent)
         ▼
    config + core/roots   (socle stdlib : .taskmap.toml + résolution de racine)
 ```
 
 - **`core/` + `config`** (P0, présent) — résolution de racine générique (`roots`, marqueur `.taskmap.toml`/
   `.git`, env `TASKMAP_ROOT`) + config déclarative. Zéro dépendance.
-- **`graph` + `classify`** (P1) — port du moteur `vault_tasks.py` : parse frontmatter (stdlib-pur interne), DAG
-  `depends_on`, phases d'épic, `classify`. Lecture seule, live.
+- **`graph` + `classify` + `frontmatter`** (P1, présent) — port du moteur `vault_tasks.py`, scindé :
+  - **`frontmatter`** parse le frontmatter YAML **en stdlib pur** (remplace PyYAML → le repo reste
+    `dependencies=[]`) ; ne couvre que le sous-ensemble utilisé (maps, seqs, flow-seqs, scalaires typés
+    dont dates→`datetime.date`, blocs `|`/`>`). Types calqués sur PyYAML 1.1.
+  - **`graph`** charge les 3 buckets (live), construit le DAG `depends_on`, dérive les arêtes de phases
+    d'épic, détecte les cycles, réconcilie les checklists. Chemin `.claude/tasks` paramétrable.
+  - **`classify`** classe chaque task et évalue les prédicats `trigger` (réveil) / `dod_criteria` (clôture),
+    grammaire fermée déterministe. Expose les helpers de requête (ready/burndown/tree_stats).
+
+  Lecture seule, live. **Non-régression prouvée** par `tools/parity_check.py` (sortie identique au moteur
+  vault sur le corpus réel — diff vide sur 464 tasks).
 - **`authoring`** (P4, **gated** par le deep-dive `stamp-write-model-reconcile`) — pose/mute les slots STAMP.
   Écriture **atomique** (write-to-temp + rename), `--dry-run`, idempotente, **jamais de commit** (le vault
   s'édite par git). Module séparé du moteur de lecture (confine l'écart read-only de la famille).

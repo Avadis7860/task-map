@@ -4,6 +4,22 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
 
 ## [Non publié]
 
+### Ajouté (P1 — moteur de graphe porté)
+- **`taskmap/frontmatter.py`** : parseur de frontmatter **stdlib-pur** (remplace PyYAML) — le repo reste
+  `dependencies=[]`. Couvre le sous-ensemble YAML des tasks (maps, seqs, flow-seqs, scalaires typés
+  int/bool/null/**date**, quotes, commentaires, blocs `|`/`>`). Parité des types calquée sur PyYAML 1.1.
+- **`taskmap/graph.py`** : chargement des 3 buckets + DAG `depends_on` + dérivation des phases d'épic +
+  détection de cycles + enfants d'épic + réconciliation des checklists. READ-ONLY. Chemin `.claude/tasks`
+  paramétrable (`tasks_subdir`).
+- **`taskmap/classify.py`** : machine à états (DONE/ACTIVE/READY/BLOCKED_DEPS/DEFERRED/EPIC/ERROR/CYCLE/
+  CANCELLED) + prédicats `trigger` (grammaire fermée déterministe) + `dod_criteria` + helpers de requête
+  (ready/tree_stats/burndown/wip/warnings/resettable). READ-ONLY, fail-soft conservateur.
+- **API publique** re-exportée depuis `taskmap` : `load_tasks`, `classify`, `evaluate_trigger`,
+  `evaluate_dod_criteria`, `ENGINE`.
+- **Non-régression prouvée** (`tools/parity_check.py`) : sortie identique au moteur vault (`vault_tasks.py`)
+  sur **464 tasks** réelles, diff vide. Filet permanent : fixtures synthétiques + `tests/test_frontmatter.py`
+  / `test_graph.py` / `test_classify.py` (40 tests).
+
 ### Ajouté (P0 — bootstrap du repo)
 - Squelette de repo autonome (package `src/taskmap/`, `pyproject.toml` hatchling src-layout, **cœur
   stdlib-pur** `dependencies=[]`, console `taskmap`).
@@ -23,8 +39,6 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
   `NotImplementedError`).
 
 ### En cours (port depuis le vault, phase par phase — cf. ROADMAP-task-map)
-- **P1** moteur de graphe (`vault_tasks.py` → `taskmap/graph.py` + `classify.py`) + parseur frontmatter
-  stdlib-pur interne + non-régression.
 - **P2** externalisation du vocab en `.taskmap.toml` · **P3** manifeste north-star (axes + carte épics→axes) ·
   **P4** module `authoring` (écriture des slots STAMP, atomique, jamais de commit — gated) · **P5** logique CLI
   réelle (`context`/`rollup`/`doctor` + résolution MCP du ref blueprint) · **P6** wrapper vault · **P7** rewire

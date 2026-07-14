@@ -7,9 +7,15 @@ du vault, rendu générique (aucun chemin en dur) et empaqueté.
 
 Voir `docs/architecture.md` pour les couches et `docs/schema-contract.md` pour le contrat de sortie.
 
-API publique stable (re-exports) : à compléter au fil du port des couches (moteur en P1, CLI en P5).
+API publique stable (re-exports) : le moteur de graphe (P1) est exposé ici ; la logique CLI arrive en P5.
 """
 from __future__ import annotations
+
+from taskmap.classify import classify, evaluate_dod_criteria, evaluate_trigger
+from taskmap.graph import ENGINE, load_tasks
+
+__all__ = ["ENGINE", "SCHEMA_VERSION", "__version__", "classify", "evaluate_dod_criteria",
+           "evaluate_trigger", "load_tasks"]
 
 __version__ = "0.1.0"
 
