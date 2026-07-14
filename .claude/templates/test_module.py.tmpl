@@ -1,0 +1,34 @@
+"""Tests de {module} — correction sur fixtures + déterminisme.
+
+Fixtures : tests/fixtures/ (noms FICTIFS uniquement — jamais un vrai basename du projet, il polluerait
+un graphe de scripts s'il était scanné). Un module qui produit un index se teste AUSSI en déterminisme.
+"""
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def test_{cas}_correction():
+    """{ce que le module doit produire} sur la fixture minimale."""
+    # from codemap.{module} import {fonction}
+    # result = {fonction}(FIXTURES / "py_sample")
+    # assert ...
+    ...
+
+
+def test_{cas}_determinisme(tmp_path: Path):
+    """Deux builds → sortie byte-identique (le déterminisme est un critère, pas un bonus)."""
+    # r1 = build(...); r2 = build(...)
+    # assert r1 == r2
+    ...
+
+
+@pytest.mark.skipif(True, reason="extra [ts] requis — voir tests/README.md")
+def test_{cas}_ts():
+    """Variante TypeScript (skip propre si tree-sitter absent)."""
+    # pytest.importorskip("tree_sitter_typescript")
+    ...

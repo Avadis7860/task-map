@@ -1,0 +1,129 @@
+"""cli — porte d'entrée unifiée `taskmap` (moteur STAMP : liaison des tasks à leurs ancrages).
+
+Une commande, des sous-commandes, un `--root`, un `.taskmap.toml`. Le câblage argparse est complet ici (la
+STRUCTURE de la CLI est **figée** dès P0) ; chaque handler délègue à sa couche. À P0 les couches ne sont pas
+encore portées : les handlers lèvent `NotImplementedError` avec un pointeur de phase — le squelette s'exécute
+et `--help`/`--version`/`--schema-version` fonctionnent.
+
+Contrairement à code-map, taskmap **n'a pas d'index dérivé bâti** : le corpus tasks est minuscule et lu en
+**live** (comme bundle_map lit ses manifestes). Donc pas de sous-commande `build`, pas de `--out`, pas de
+garde index-absent. La lecture d'une task est directe.
+
+Sous-commandes (surface figée, portée en P5 sauf mention) :
+  context <slug>              les 3 liaisons STAMP : axe north-star + épic servi/débloqué + blueprint
+  link <slug> <ancre…>        pose un slot STAMP sur une task (écriture — porté en P4, gated)
+  unlink <slug> <ancre…>      retire un slot STAMP d'une task (écriture — porté en P4, gated)
+  rollup <dimension> <nom>    agrège le travail sous un axe (`rollup axis <nom>`)
+  doctor                      cohérence des liaisons (blueprint mort, épic inexistant, axe non résolu)
+"""
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+from taskmap import SCHEMA_VERSION, __version__
+from taskmap.config import Config
+from taskmap.core import roots
+
+
+class _SchemaVersionAction(argparse.Action):
+    """`--schema-version` : imprime la version du CONTRAT (enveloppe + modèle STAMP) et sort — comme
+    `--version` mais pour la négociation inter-repos. Un consommateur (hook session-start, cockpit)
+    l'interroge pour câbler sa clé de cache / vérifier la compat, avant tout appel de lecture."""
+
+    def __init__(self, option_strings, dest, **kw):  # noqa: ANN001
+        super().__init__(option_strings, dest, nargs=0, **kw)
+
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ANN001
+        print(SCHEMA_VERSION)
+        parser.exit()
+
+
+def _resolve(root_opt: str | None) -> tuple[Path, Config]:
+    """Résout (racine, config) pour toute sous-commande. Pas d'`index_dir`/`--out` : lecture live du corpus
+    tasks sous la racine (pas d'index dérivé — cf. docstring du module)."""
+    root = roots.project_root(root_opt)
+    return root, Config.load(root)
+
+
+def _emit(data: dict) -> int:
+    """Émet le payload JSON sous **enveloppe uniforme** (contrat inter-repos) : tout verbe de lecture porte
+    `ok` (bool) et `schema_version`. `ok` défaut `True` ; un payload qui pose déjà `ok:false` (échec logique :
+    task introuvable, liaison morte) l'emporte. **Code de retour** : les verbes JSON sortent **rc 0** — le
+    succès logique se lit dans le corps (`ok`), pas dans rc (cf. docs/schema-contract.md)."""
+    payload = {"ok": True, **data, "schema_version": SCHEMA_VERSION}
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
+
+
+# --- Handlers (stubs P0 : la STRUCTURE est figée, la logique est portée aux phases indiquées) ---------------
+
+def _cmd_context(a: argparse.Namespace) -> int:
+    raise NotImplementedError("porté en P5 : rendre les 3 liaisons STAMP (axe + épic + blueprint) d'une task")
+
+
+def _cmd_link(a: argparse.Namespace) -> int:
+    raise NotImplementedError("porté en P4 (module authoring, gated par stamp-write-model-reconcile) : "
+                              "poser un slot STAMP")
+
+
+def _cmd_unlink(a: argparse.Namespace) -> int:
+    raise NotImplementedError("porté en P4 (module authoring, gated par stamp-write-model-reconcile) : "
+                              "retirer un slot STAMP")
+
+
+def _cmd_rollup(a: argparse.Namespace) -> int:
+    raise NotImplementedError("porté en P5 : agréger le travail sous un axe north-star (rollup épic→axe)")
+
+
+def _cmd_doctor(a: argparse.Namespace) -> int:
+    raise NotImplementedError("porté en P5 : signaler les liaisons mortes (blueprint/épic/axe non résolus)")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    ap = argparse.ArgumentParser(prog="taskmap",
+                                 description="moteur déterministe de liaison des tasks (STAMP)")
+    ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    ap.add_argument("--schema-version", action=_SchemaVersionAction,
+                    help="imprime la version du contrat de schéma (négociation consommateur) et sort")
+    # `--root` partagé par TOUTES les sous-commandes (parent parser) → `taskmap context foo --root .` marche
+    # (forme naturelle), pas seulement `taskmap --root . context foo`.
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--root", help="racine du vault/repo cible (défaut : repère .taskmap.toml/.git "
+                                       "depuis le cwd, ou $TASKMAP_ROOT)")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    ctx = sub.add_parser("context", parents=[common], help="les 3 liaisons STAMP d'une task")
+    ctx.add_argument("slug", help="slug de la task (id)")
+    ctx.set_defaults(func=_cmd_context)
+
+    lk = sub.add_parser("link", parents=[common], help="pose un slot STAMP sur une task (écriture, P4)")
+    lk.add_argument("slug")
+    lk.add_argument("anchors", nargs="+", help="ancres à poser (ex. axis=…, epic=…, blueprint=…:applies)")
+    lk.set_defaults(func=_cmd_link)
+
+    ulk = sub.add_parser("unlink", parents=[common], help="retire un slot STAMP d'une task (écriture, P4)")
+    ulk.add_argument("slug")
+    ulk.add_argument("anchors", nargs="+", help="ancres à retirer")
+    ulk.set_defaults(func=_cmd_unlink)
+
+    rl = sub.add_parser("rollup", parents=[common], help="agrège le travail sous une dimension (axis <nom>)")
+    rl.add_argument("dimension", choices=["axis"], help="dimension d'agrégation (P0 : axis)")
+    rl.add_argument("name", help="nom de la dimension (ex. un axe north-star)")
+    rl.set_defaults(func=_cmd_rollup)
+
+    dr = sub.add_parser("doctor", parents=[common], help="cohérence des liaisons STAMP")
+    dr.set_defaults(func=_cmd_doctor)
+
+    return ap
+
+
+def main(argv=None) -> int:
+    ap = build_parser()
+    a = ap.parse_args(argv)
+    return a.func(a)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

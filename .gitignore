@@ -1,0 +1,37 @@
+# ============================================================
+# Python package
+# ============================================================
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ============================================================
+# Cache local éventuel (sous <repo>/.taskmap/) — reconstructible → JAMAIS versionné.
+# NB : à P0 taskmap lit en live (pas d'index dérivé) ; on ancre le motif au cas où un cache apparaisse.
+# ============================================================
+.taskmap/
+
+# ============================================================
+# Claude — bundle committé (CLAUDE.md + .claude/) ; état LOCAL ignoré
+# ============================================================
+.claude/settings.local.json
+.claude/*.local.json
+
+# ============================================================
+# Env / éditeurs / OS
+# ============================================================
+.env
+.env.*
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

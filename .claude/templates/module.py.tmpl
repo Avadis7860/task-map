@@ -1,0 +1,15 @@
+"""{module} — {rôle en une ligne}.
+
+Port : {fichier source legacy} ({partie portée}). Correctif appliqué : #{N} de docs/weak-points.md
+({résumé du correctif}). Schéma de sortie figé — cf. docs/schema-contract.md.
+"""
+from __future__ import annotations
+
+# Imports de PACKAGE uniquement (jamais de sys.path.insert) :
+# from codemap.core import hashing, jsonl, roots, walk
+# from codemap.engines.base import Symbol
+
+
+def {fonction}(...):
+    """{contrat} — best-effort si le module produit une carte (jamais d'exception qui casse l'appelant)."""
+    ...

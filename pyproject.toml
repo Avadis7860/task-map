@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "task-map"
+version = "0.1.0"
+description = "Moteur déterministe de liaison des tasks à leurs ancrages (protocole STAMP) — axe north-star, épic servi/débloqué, blueprint appliqué. 6ᵉ outil de la famille -map."
+readme = "README.md"
+requires-python = ">=3.11"  # tomllib stdlib (config .taskmap.toml sans dépendance)
+license = { file = "LICENSE" }
+authors = [{ name = "AvAgency", email = "contact@avagency.pro" }]
+keywords = ["task-map", "stamp", "northstar", "backlog", "blueprint", "task-graph", "prompt-context"]
+# Cœur stdlib-pur : AUCUNE dépendance obligatoire → installable partout, offline, sans compilation native.
+# (La résolution des refs blueprint via le MCP mcp-catalogs, en P5, sera une intégration optionnelle à
+# dégradation honnête — jamais une dépendance dure.)
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5", "mypy>=1.10"]
+
+[project.scripts]
+# Une seule porte d'entrée unifiée (cf. docs/architecture.md).
+taskmap = "taskmap.cli:main"
+
+[project.urls]
+Repository = "https://github.com/Avadis7860/task-map"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/taskmap"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+packages = ["taskmap"]
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+# Les fixtures contiendront des tasks d'échantillon (frontmatter) qui NE sont PAS des tests à collecter.
+norecursedirs = ["fixtures"]

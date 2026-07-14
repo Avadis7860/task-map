@@ -1,0 +1,6 @@
+# Déterminisme multi-OS. Le texte est lu en newline-universel (LF) ; on force LF au checkout pour que le
+# MÊME fichier produise le MÊME hash sur WSL, Debian et macOS, quel que soit le git core.autocrlf de la machine.
+* text=auto eol=lf
+
+# Fixtures binaires éventuelles : jamais de conversion.
+*.png binary

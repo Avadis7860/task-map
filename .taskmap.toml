@@ -1,0 +1,19 @@
+# .taskmap.toml — configuration d'un vault/repo cible (échantillon commenté / valeurs = défauts).
+#
+# Ce fichier vit à la RACINE du repo dont taskmap lit les tasks. Sans lui, taskmap applique des défauts
+# génériques permissifs. Les flags CLI (`--root`) le surchargent.
+#
+# À P0 seul le [perimeter] est lu. Le reste est un PLACEHOLDER commenté : le vocab métier
+# (PRIORITIES / SERVICES / CATEGORIES) est externalisé ici en **P2**, et la carte épics→axes north-star
+# (le rollup task→épic→axe) en **P3**. On ne les active pas tant que leur phase n'est pas portée.
+
+[perimeter]
+# Sous-arbres tasks à couvrir (relatifs à la racine). Vide/absent = défaut générique.
+include = []
+# Sous-arbres exclus en plus des défauts.
+exclude = []
+
+# ------------------------------------------------------------------------------------------------------
+# [vocab]        # P2 — enums fermés du frontmatter (priorities, services, categories) + bucket paths.
+# [northstar]    # P3 — les 4 axes + la carte des épics→axes (projection YAML de la prose north-star v2+v3).
+# ------------------------------------------------------------------------------------------------------
