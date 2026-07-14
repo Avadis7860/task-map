@@ -22,9 +22,11 @@ import argparse
 import json
 from pathlib import Path
 
-from taskmap import SCHEMA_VERSION, __version__
+from taskmap import SCHEMA_VERSION, __version__, context
+from taskmap.authoring import AuthoringError, StampEdit, apply_edit, plan_edit
 from taskmap.config import Config
 from taskmap.core import roots
+from taskmap.graph import load_tasks
 
 
 class _SchemaVersionAction(argparse.Action):
@@ -57,28 +59,93 @@ def _emit(data: dict) -> int:
     return 0
 
 
-# --- Handlers (stubs P0 : la STRUCTURE est figée, la logique est portée aux phases indiquées) ---------------
+# --- Grammaire d'ancre (link/unlink) -----------------------------------------------------------------------
+
+_LIST_KEYS: tuple[str, ...] = ("serves", "unblocks", "template")
+_ANCHOR_KEYS: tuple[str, ...] = ("epic", "blueprint", *_LIST_KEYS)
+
+
+def _build_stamp_edit(tokens: list[str], *, removing: bool) -> StampEdit:
+    """Parse les ancres `clé=valeur[:posture]` en `StampEdit`. PUR (échoue en `AuthoringError`).
+
+    `epic=<id>` · `blueprint=<id>:<posture>` · `serves=a,b` · `unblocks=a` · `template=<bp>/<n>.md`.
+    unlink : `serves=a` retire `a` ; une ancre NUE (`epic`, `blueprint`, `serves`) vide le slot (`clear`).
+    `axis=…` est refusé (slot dérivé, non écrivable).
+    """
+    kwargs: dict = {}
+    clear: set[str] = set()
+    for tok in tokens:
+        key, sep, raw = tok.partition("=")
+        key = key.strip()
+        val: str | None = raw.strip() if sep else None
+        if key == "axis":
+            raise AuthoringError("axis est dérivé (épic→axe), non écrivable — retire l'ancre 'axis='")
+        if key not in _ANCHOR_KEYS:
+            raise AuthoringError(f"ancre inconnue : {key!r} (∈ {', '.join(_ANCHOR_KEYS)})")
+        if removing and not val:
+            clear.add(key)
+            continue
+        if not val:
+            raise AuthoringError(f"ancre sans valeur : '{key}=' attend une valeur")
+        if key == "epic":
+            kwargs["epic"] = val
+        elif key == "blueprint":
+            bid, bsep, posture = val.partition(":")
+            if not bsep:
+                raise AuthoringError("'blueprint=' attend <id>:<posture> "
+                                     "(posture ∈ applies/tests/updates-candidate)")
+            kwargs["blueprint"] = (bid.strip(), posture.strip())
+        else:  # slot-liste
+            items = tuple(x.strip() for x in val.split(",") if x.strip())
+            kwargs[f"{key}_{'remove' if removing else 'add'}"] = items
+    if clear:
+        kwargs["clear"] = frozenset(clear)
+    return StampEdit(**kwargs)
+
+
+# --- Handlers ----------------------------------------------------------------------------------------------
 
 def _cmd_context(a: argparse.Namespace) -> int:
-    raise NotImplementedError("porté en P5 : rendre les 3 liaisons STAMP (axe + épic + blueprint) d'une task")
-
-
-def _cmd_link(a: argparse.Namespace) -> int:
-    raise NotImplementedError("porté en P4 (module authoring, gated par stamp-write-model-reconcile) : "
-                              "poser un slot STAMP")
-
-
-def _cmd_unlink(a: argparse.Namespace) -> int:
-    raise NotImplementedError("porté en P4 (module authoring, gated par stamp-write-model-reconcile) : "
-                              "retirer un slot STAMP")
+    root, cfg = _resolve(a.root)
+    return _emit(context.build_context(root, a.slug, cfg))
 
 
 def _cmd_rollup(a: argparse.Namespace) -> int:
-    raise NotImplementedError("porté en P5 : agréger le travail sous un axe north-star (rollup épic→axe)")
+    root, cfg = _resolve(a.root)
+    return _emit(context.rollup_axis(root, a.name, cfg))
 
 
 def _cmd_doctor(a: argparse.Namespace) -> int:
-    raise NotImplementedError("porté en P5 : signaler les liaisons mortes (blueprint/épic/axe non résolus)")
+    root, cfg = _resolve(a.root)
+    return _emit(context.doctor(root, cfg))
+
+
+def _cmd_link(a: argparse.Namespace) -> int:
+    return _run_edit(a, removing=False)
+
+
+def _cmd_unlink(a: argparse.Namespace) -> int:
+    return _run_edit(a, removing=True)
+
+
+def _run_edit(a: argparse.Namespace, *, removing: bool) -> int:
+    """Fabrique le `StampEdit` depuis les ancres, calcule le plan (pur), puis `--dry-run` (diff seul) ou écrit
+    atomiquement (`apply_edit`, jamais de commit). Task absente / ancre invalide → `ok:false` (rc 0)."""
+    root, cfg = _resolve(a.root)
+    index, _warns = load_tasks(root, cfg)
+    rec = index.get(a.slug)
+    if rec is None:
+        return _emit({"ok": False, "slug": a.slug, "reason": f"task introuvable : {a.slug}"})
+    path = root / rec["path"]
+    try:
+        edit = _build_stamp_edit(a.anchors, removing=removing)
+        plan = plan_edit(path.read_text(encoding="utf-8"), edit)
+    except AuthoringError as e:
+        return _emit({"ok": False, "slug": a.slug, "reason": str(e)})
+    if a.dry_run:
+        return _emit({"slug": a.slug, "dry_run": True, "changed": plan.changed, "diff": plan.diff})
+    applied = apply_edit(path, plan)
+    return _emit({"slug": a.slug, "changed": plan.changed, "applied": applied})
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -98,14 +165,18 @@ def build_parser() -> argparse.ArgumentParser:
     ctx.add_argument("slug", help="slug de la task (id)")
     ctx.set_defaults(func=_cmd_context)
 
-    lk = sub.add_parser("link", parents=[common], help="pose un slot STAMP sur une task (écriture, P4)")
+    lk = sub.add_parser("link", parents=[common], help="pose un slot STAMP sur une task (écriture)")
     lk.add_argument("slug")
-    lk.add_argument("anchors", nargs="+", help="ancres à poser (ex. axis=…, epic=…, blueprint=…:applies)")
+    lk.add_argument("anchors", nargs="+",
+                    help="ancres à poser (ex. epic=…, blueprint=…:applies, serves=a,b)")
+    lk.add_argument("--dry-run", action="store_true", help="montre le diff sans écrire (fichier intact)")
     lk.set_defaults(func=_cmd_link)
 
-    ulk = sub.add_parser("unlink", parents=[common], help="retire un slot STAMP d'une task (écriture, P4)")
+    ulk = sub.add_parser("unlink", parents=[common], help="retire un slot STAMP d'une task (écriture)")
     ulk.add_argument("slug")
-    ulk.add_argument("anchors", nargs="+", help="ancres à retirer")
+    ulk.add_argument("anchors", nargs="+",
+                     help="ancres à retirer (ex. serves=a pour retirer, ou 'epic' nu pour vider le slot)")
+    ulk.add_argument("--dry-run", action="store_true", help="montre le diff sans écrire")
     ulk.set_defaults(func=_cmd_unlink)
 
     rl = sub.add_parser("rollup", parents=[common], help="agrège le travail sous une dimension (axis <nom>)")

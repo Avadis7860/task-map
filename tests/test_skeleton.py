@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-STUB_VERBS = ["context", "link", "unlink", "rollup", "doctor"]
+VERBS = ["context", "link", "unlink", "rollup", "doctor"]
 
 
 def test_package_imports():
@@ -26,7 +26,7 @@ def test_cli_parser_builds_and_lists_subcommands():
     subactions = [a for a in parser._actions if a.dest == "cmd"]
     assert subactions, "aucune sous-commande câblée"
     choices = set(subactions[0].choices)
-    assert set(STUB_VERBS) <= choices
+    assert set(VERBS) <= choices
 
 
 def test_version_and_schema_version_exit_clean(capsys: pytest.CaptureFixture[str]):
@@ -82,20 +82,18 @@ def test_config_reads_perimeter(tmp_path: Path):
     assert cfg.exclude == ["c"]
 
 
-@pytest.mark.parametrize("verb", STUB_VERBS)
-def test_stub_handlers_are_honest(verb: str):
-    """Chaque verbe est un STUB honnête à P0 : il lève NotImplementedError (avec pointeur de phase), il ne
-    renvoie jamais un faux résultat vide. La logique est portée en P4/P5."""
-    from taskmap.cli import build_parser
+@pytest.mark.parametrize("verb", VERBS)
+def test_handlers_are_live(verb: str, tmp_path):
+    """Depuis P5 chaque verbe est CÂBLÉ : sur une racine vide il s'exécute (rc 0, enveloppe JSON), il ne lève
+    plus `NotImplementedError`. La correction fine vit dans test_context.py / test_cli.py."""
+    from taskmap.cli import main
 
-    parser = build_parser()
+    (tmp_path / ".taskmap.toml").write_text('[tasks]\nsubdir = [".claude", "tasks"]\n', encoding="utf-8")
     argv = {
         "context": ["context", "foo"],
-        "link": ["link", "foo", "axis=x"],
-        "unlink": ["unlink", "foo", "axis=x"],
-        "rollup": ["rollup", "axis", "env-dev-workers-ia"],
+        "link": ["link", "foo", "epic=x"],
+        "unlink": ["unlink", "foo", "epic"],
+        "rollup": ["rollup", "axis", "un-axe"],
         "doctor": ["doctor"],
-    }[verb]
-    ns = parser.parse_args(argv)
-    with pytest.raises(NotImplementedError):
-        ns.func(ns)
+    }[verb] + ["--root", str(tmp_path)]
+    assert main(argv) == 0  # ne lève pas NotImplementedError

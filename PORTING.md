@@ -30,7 +30,7 @@ motor read+WRITE confiné, MCP link-by-reference, blueprint `deterministic-tooli
 | vocab externalisé (`.taskmap.toml`) | P2 | **porté** (vocab + `tasks_subdir` → config ; défauts permissifs ; parité re-prouvée) |
 | manifeste north-star (loader/validateur) | P3 | **porté** (`northstar.py` : loader stdlib + prédicats purs + rollup ; donnée vault) |
 | `authoring` (écriture STAMP) | P4 | **porté** (gate `stamp-write-model-reconcile` résolu ; `plan_edit` pur + `apply_edit` atomique ; jamais de commit) |
-| verbes `context`/`rollup`/`doctor` | P5 | à faire (+ résolution MCP du ref blueprint) |
+| verbes `context`/`rollup`/`doctor` + `link`/`unlink` | P5 | **porté** (deep-dive `taskmap-mcp-degradation-contract` résolu ; résolution blueprint **déléguée** + seam) |
 | wrapper vault `task_map.py` | P6 | à faire (reste au vault) |
 | rewire hook `session-start` | P7 | à faire (reste au vault) |
 | backfill + adoption cockpit | P8 | à faire |
@@ -73,6 +73,18 @@ motor read+WRITE confiné, MCP link-by-reference, blueprint `deterministic-tooli
   pur testable in-memory + `selftest` ; `apply_edit(path, plan)` = seule I/O, atomique, no-op si inchangé),
   **jamais de commit** (le fichier dirty est le hand-off vers la couche git/cockpit). Les verbes CLI `link`/
   `unlink` qui consomment ce moteur restent P5.
+
+- **#6 — verbes de lecture + résolution blueprint déléguée (P5)** : nouveau module `taskmap/context.py`
+  (`build_context`/`rollup_axis`/`doctor` + cœur pur `extract_stamp`/`assemble_context`/`selftest`) ; les 5
+  stubs CLI câblés. Deux choix de généralisation : (a) **les slots STAMP sont re-parsés du frontmatter** — le
+  moteur de graphe porté (`load_tasks`) ne retient que `depends_on`, donc `context` relit `epic`/`serves`/
+  `unblocks`/`blueprint`/`template` via `frontmatter.split_frontmatter` ; `axis` reste **dérivé** (jamais lu).
+  (b) **La résolution du `blueprint:` ref est DÉLÉGUÉE au consommateur MCP** (deep-dive
+  `taskmap-mcp-degradation-contract` résolu, décision vault `2026-07-14--…`) : task-map émet le ref +
+  `resolved:false` + raison honnête par défaut et expose un **seam d'injection** `resolve_blueprint`, mais ne
+  compose **jamais** le MCP lui-même — il reste offline / stdlib-pur / sans secret (le consommateur, une session
+  Claude ou le cockpit, a déjà l'accès MCP). `link`/`unlink` consomment `authoring` (grammaire d'ancre
+  `clé=valeur[:posture]`, `--dry-run`, `axis=` refusé).
 
 ## Preuve de non-régression (P1 · re-vérifiée P2)
 

@@ -30,26 +30,76 @@ Chaque **verbe de lecture** (`context`, `rollup`, `doctor`) émet un objet JSON 
 **additive** : incrément mineur quand on AJOUTE un slot/champ/valeur ; un consommateur d'une version antérieure
 ignore simplement les nouveautés (jamais de retrait/renommage).
 
-## `context <slug>` — les 3 liaisons STAMP d'une task *(forme figée en P5)*
+## `context <slug>` — les 3 liaisons STAMP d'une task *(figée P5)*
 
-Cible (le critère binaire de la mission) : rendre pour une task son **axe** north-star, l'**épic** servi/débloqué
-et le **blueprint** appliqué. Esquisse de la charge utile (à geler en P5) :
+Rend pour une task son **axe** north-star (dérivé), l'**épic** servi + `serves`/`unblocks`, et le **blueprint**
+appliqué (ref + verdict). Charge utile :
 
 ```jsonc
 {
   "ok": true,
   "slug": "…",
-  "axis": "…",                 // dérivé : epic → manifeste.epics[epic].axis (non stocké)
-  "epic": "…",                 // épic servi (0..1)
+  "axis": "…",                 // DÉRIVÉ : epic → manifeste.epics[epic].axis (jamais lu ni stocké ; null hors carte)
+  "epic": "…",                 // épic servi (0..1) ; null si non lié
   "serves": ["…"], "unblocks": ["…"],
-  "blueprint": { "id": "…", "posture": "applies|tests|updates-candidate", "resolved": true },
+  "blueprint": { "id": "…", "posture": "applies|tests|updates-candidate",
+                 "resolved": false, "reason": "…" },
   "template": ["…"],
   "schema_version": "0.1.0"
 }
 ```
 
-Un `blueprint.id` qui ne résout pas via le MCP est une **liaison morte signalée** (`resolved:false` + raison),
-jamais inventée.
+- **`axis`** est **dérivé** du rollup épic→axe (`northstar.axis_for_epic`) : jamais lu ni stocké (I1). `null` si
+  la task n'a pas d'`epic`, si l'épic est hors carte, ou si aucun manifeste n'est configuré (**honnête**).
+- **`blueprint`** est `null` si non lié. Sinon `{id, posture}` + un **verdict** : par **défaut**
+  `resolved:false` + `reason` (« résolution déléguée au consommateur MCP ») — task-map **ne compose pas le
+  MCP** ; il émet le ref (link-by-reference déterministe-local) et le **consommateur** (une session Claude qui a
+  déjà `.mcp.json`, ou le cockpit) le résout via `read(type=blueprint, ref=<id>)`. Un consommateur programmatique
+  peut injecter un resolver (seam `resolve_blueprint`) : un dict véridique → `resolved:true` (+ champs fusionnés) ;
+  un vide/`empty:true` → **liaison morte signalée**, jamais inventée. Contrat : décision vault
+  `corpus/decision/projects/2026-07-14--taskmap-mcp-degradation-contract.md`.
+
+## `rollup axis <nom>` — agrégat d'un axe *(figée P5)*
+
+```jsonc
+{ "ok": true, "dimension": "axis", "name": "…", "count": 2,
+  "members": [ { "slug": "…", "status": "…", "epic": "…" } ],
+  "schema_version": "0.1.0" }
+```
+
+`members` = les tasks dont l'axe **dérivé** (épic→axe) == `name`, triées par slug. Pas de manifeste configuré, ou
+axe inconnu → `ok:false` + `reason` (dégradation honnête, jamais un agrégat vide trompeur).
+
+## `doctor` — cohérence des liaisons *(figée P5)*
+
+```jsonc
+{ "ok": false, "checked": 468,
+  "problems": ["…"],   // incohérences DURES → bascule ok:false
+  "warnings": ["…"],   // advisory (remontée proactive) → NE bascule PAS ok
+  "schema_version": "0.1.0" }
+```
+
+- **`problems`** (chaînes lisibles) — les incohérences **structurelles** : dépendance fantôme (`dep dangling`),
+  `cycle de dépendances`, manifeste north-star incohérent (`northstar.validate`), intégrité STAMP (épic hors
+  carte ; blueprint mort **si** un resolver est fourni). `ok = not problems`.
+- **`warnings`** — l'hygiène tasks déjà surfacée par le moteur (réconciliation ROADMAP, WIP, différés, vocab
+  hors-liste) : du **matériel de remontée proactive**, pas des échecs — ne bascule jamais `ok`.
+- **Code de retour** : `doctor` suit l'enveloppe taskmap (**rc 0**, verdict dans `ok`), pas un `rc≠0`.
+
+## `link` / `unlink <slug> <ancre…>` — écriture des slots STAMP *(figée P5)*
+
+Consomment `authoring` (P4). **Grammaire d'ancre** `clé=valeur[:posture]` :
+
+| Ancre | `link` | `unlink` |
+|---|---|---|
+| `epic=<id>` | set l'épic | `epic` (nu) → vide le slot |
+| `blueprint=<id>:<posture>` | set (posture ∈ applies/tests/updates-candidate) | `blueprint` (nu) → vide |
+| `serves=a,b` / `unblocks=…` / `template=…` | **union** (ajout) | retire les items cités ; nu → vide la liste |
+| `axis=…` | **refusé** (dérivé, non écrivable) | refusé |
+
+`--dry-run` émet `{slug, dry_run:true, changed, diff}` **sans écrire** ; sinon `{slug, changed, applied}` après
+écriture **atomique** (jamais de commit — le fichier dirty est le hand-off git/cockpit). Ancre invalide / posture
+invalide / task absente → `ok:false` + `reason` (rc 0).
 
 ## Configuration du repo cible — `.taskmap.toml` *(P2)*
 

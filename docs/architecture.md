@@ -71,7 +71,16 @@ dupliquée). Le modèle de données figé (slots, cardinalités, vocab) est le *
   (tempfile même-dir + `os.replace`), no-op si inchangé (idempotence), **jamais de commit** (le fichier dirty
   est le hand-off vers la couche git/cockpit). Module séparé du moteur de lecture (confine l'écart read-only).
   Contrat : décision vault `2026-07-14--stamp-write-model-contract.md`. Les verbes CLI `link`/`unlink` = P5.
-- **`context` / `rollup`** (P5) — les verbes de navigation : les 3 liaisons d'une task, l'agrégat d'un axe.
+- **`context` / `rollup` / `doctor`** (P5, **présent**) — les verbes de lecture. `context <slug>` rend les 3
+  liaisons STAMP (axe **dérivé** via `northstar.axis_for_epic` · épic servi/`serves`/`unblocks` · blueprint
+  ref+posture) ; `rollup axis <nom>` agrège les tasks dont l'axe dérivé == `<nom>` ; `doctor` sépare les
+  **problèmes durs** (dep dangling/cycle, manifeste incohérent, intégrité STAMP → bascule `ok:false`) des
+  **warnings advisory** (hygiène tasks, matériel de remontée proactive). Les slots STAMP sont **re-parsés du
+  frontmatter** (le moteur de graphe ne retient que `depends_on`) ; `axis` n'est jamais lu, seulement dérivé.
+  **Résolution du `blueprint:` ref DÉLÉGUÉE** au consommateur MCP (une session Claude a déjà `.mcp.json`, ou le
+  cockpit) : `resolved:false` + raison honnête par défaut, **seam d'injection** `resolve_blueprint` pour un
+  consommateur programmatique — task-map ne compose jamais le MCP (offline / stdlib-pur / sans secret ; contrat
+  `2026-07-14--taskmap-mcp-degradation-contract.md`). `link`/`unlink` consomment `authoring` (P4).
 
 ## Frontières délibérées (ce que ce repo n'est PAS)
 

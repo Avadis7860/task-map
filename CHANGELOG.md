@@ -4,6 +4,31 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
 
 ## [Non publié]
 
+### Ajouté (P5 — verbes de lecture + résolution blueprint déléguée)
+- **`taskmap/context.py`** *(neuf)* : les verbes de LECTURE de STAMP. `build_context(root, slug)` rend les 3
+  liaisons (axe **dérivé** via `northstar.axis_for_epic` · épic servi/`serves`/`unblocks` · blueprint ref+verdict) ;
+  `rollup_axis(root, name)` agrège les tasks dont l'axe dérivé == `name` ; `doctor(root)` sépare les **problèmes
+  durs** (dep dangling/cycle, manifeste incohérent, intégrité STAMP → `ok:false`) des **warnings advisory**
+  (hygiène tasks = matériel de remontée proactive, ne bascule pas `ok`). Cœur **pur** `extract_stamp` /
+  `assemble_context` / `_blueprint_verdict` + `selftest()` in-module (I4).
+- **Slots STAMP re-parsés du frontmatter** : le moteur de graphe (`load_tasks`) ne retient que `depends_on` ;
+  `context` relit `epic`/`serves`/`unblocks`/`blueprint`/`template` via `frontmatter.split_frontmatter`. `axis`
+  n'est **jamais lu**, seulement dérivé (I1).
+- **Résolution du `blueprint:` ref DÉLÉGUÉE** au consommateur MCP (deep-dive `taskmap-mcp-degradation-contract`
+  résolu, décision vault `2026-07-14--taskmap-mcp-degradation-contract.md`) : `resolved:false` + raison honnête
+  **par défaut**, **seam d'injection** `resolve_blueprint` pour un consommateur programmatique. task-map ne
+  compose **jamais** le MCP (offline / stdlib-pur / sans secret ; `dependencies=[]` tenu) — la session Claude (ou
+  le cockpit), qui a déjà `.mcp.json`, résout.
+- **CLI câblée** (`taskmap/cli.py`) : les 5 stubs `NotImplementedError` remplacés. `link`/`unlink` consomment
+  `authoring` — grammaire d'ancre `clé=valeur[:posture]` (`epic=` · `blueprint=<id>:<posture>` · `serves=a,b` ;
+  `axis=` **refusé**), flag **`--dry-run`** (diff sans écriture), écriture atomique **jamais committée**.
+- **API publique** : `build_context`, `rollup_axis`, `doctor`, `extract_stamp` re-exportés depuis `taskmap`.
+  `SCHEMA_VERSION` inchangé (`0.1.0` — ajouts **additifs** au payload, aucun retrait).
+- Filet : `tests/test_context.py` + `tests/test_cli.py` (26 tests — extraction, axe dérivé + None honnête,
+  blueprint délégué + seam injecté + resolver mort/qui casse, rollup, doctor durs vs advisory, `link`/`unlink`
+  end-to-end via `main`, dry-run, idempotence, `axis=`/posture refusés, task absente). Gate vert
+  (ruff/mypy/pytest **108**). `test_skeleton` : la garde « stubs honnêtes » devient « verbes câblés ».
+
 ### Ajouté (P4 — authoring : le volet WRITE de STAMP)
 - **`taskmap/authoring.py`** *(neuf)* : pose/mute les slots STAMP (`epic`/`serves`/`unblocks`/`blueprint`/
   `template`) dans le frontmatter d'une task. Le gate `stamp-write-model-reconcile` est **résolu** (contrat dans
@@ -91,6 +116,6 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
   `NotImplementedError`).
 
 ### En cours (port depuis le vault, phase par phase — cf. ROADMAP-task-map)
-- **P5** logique CLI réelle (`context`/`rollup`/`doctor` + `link`/`unlink` : câble le rollup `axis_for_epic`,
-  consomme `authoring`, + résolution MCP du ref blueprint) · **P6** wrapper vault · **P7** rewire du hook
-  session-start · **P8** backfill + adoption cockpit.
+- **P6** wrapper vault `task_map.py` (compose la lib packagée) · **P7** rewire du hook session-start (consomme
+  `taskmap context`) · **P8** backfill des slots STAMP + adoption cockpit + un vrai resolver MCP injecté côté
+  consommateur.
