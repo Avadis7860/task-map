@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from taskmap.config import Config
 from taskmap.graph import (
     _children,
     derive_phase_deps,
@@ -40,6 +41,22 @@ def test_hors_vocab_failsoft_warnings():
     assert any("env invalide" in w for w in warnings)
     assert any("service invalide" in w for w in warnings)
     assert any("category invalide" in w for w in warnings)
+
+
+def test_permissive_config_silences_vocab_warnings():
+    """Généricité (P2) : sous une config au vocab VIDE (défaut permissif), un service/catégorie 'hors vocab'
+    n'est PAS réprimandé — un repo tiers ne se fait jamais signaler un vocab non déclaré. La priorité garde un
+    défaut ordonné non vide → son warning hors-vocab persiste."""
+    _, warnings = load_tasks(FIXT, config=Config())   # services/categories = frozenset() (permissif)
+    assert not any("service invalide" in w for w in warnings)
+    assert not any("category invalide" in w for w in warnings)
+    assert any("priority hors vocab" in w for w in warnings)   # priorités = défaut P0…P3, check actif
+
+
+def test_tasks_subdir_from_config_relocates_buckets():
+    """`tasks_subdir` de la config situe les buckets : un chemin inexistant → index vide (pas de crash)."""
+    index, _ = load_tasks(FIXT, config=Config(tasks_subdir=("nope", "tasks")))
+    assert index == {}
 
 
 def test_phase_deps_derived_from_manifest():

@@ -4,6 +4,22 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
 
 ## [Non publié]
 
+### Ajouté (P2 — config générique du vocab)
+- **`taskmap/config.py`** : le **vocab métier** (priorités ordonnées, services, catégories) et l'**emplacement
+  des buckets** (`tasks_subdir`) sont externalisés en `.taskmap.toml` (tables `[vocab]`/`[tasks]`) — jusque-là
+  codés en dur dans `graph.py`. Défauts **permissifs** : sans fichier, `services`/`categories` sont vides ⇒
+  aucune validation ni warning (un repo tiers n'est jamais réprimandé pour un vocab non déclaré) ; `priorities`
+  garde un défaut ordonné `P0…P3` (requis par le ranking). Propriété `Config.prio` = source unique de l'ordre.
+- **`graph.py`/`classify.py` dé-vaultisés** : `load_tasks(root, config=None)` résout `Config.load(root)` ;
+  `PRIORITIES`/`PRIO`/`SERVICES`/`CATEGORIES` retirés des constantes de module (déplacés en `config.py`). La
+  validation service/category ne se déclenche que si le vocab est non vide. `_rank_key`/`_ready` reçoivent
+  l'ordre des priorités en paramètre. **Records classifiés inchangés** (aucun champ neuf).
+- **`Config`** ajouté aux re-exports publics. `SCHEMA_VERSION` inchangé (`0.1.0` — ni l'enveloppe ni la forme
+  des records ne bougent).
+- **Non-régression re-prouvée** : `tools/parity_check.py` reste **diff vide sur 465 tasks** vault, le vault
+  ayant reçu un `.taskmap.toml` mirroir de son vocab. Filet : `tests/test_config.py` + test de généricité
+  (`load_tasks(config=Config())` → aucun warning vocab) + fixture `.taskmap.toml`.
+
 ### Ajouté (P1 — moteur de graphe porté)
 - **`taskmap/frontmatter.py`** : parseur de frontmatter **stdlib-pur** (remplace PyYAML) — le repo reste
   `dependencies=[]`. Couvre le sous-ensemble YAML des tasks (maps, seqs, flow-seqs, scalaires typés
@@ -39,7 +55,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
   `NotImplementedError`).
 
 ### En cours (port depuis le vault, phase par phase — cf. ROADMAP-task-map)
-- **P2** externalisation du vocab en `.taskmap.toml` · **P3** manifeste north-star (axes + carte épics→axes) ·
-  **P4** module `authoring` (écriture des slots STAMP, atomique, jamais de commit — gated) · **P5** logique CLI
-  réelle (`context`/`rollup`/`doctor` + résolution MCP du ref blueprint) · **P6** wrapper vault · **P7** rewire
-  du hook session-start · **P8** backfill + adoption cockpit.
+- **P3** manifeste north-star (axes + carte épics→axes) · **P4** module `authoring` (écriture des slots STAMP,
+  atomique, jamais de commit — gated) · **P5** logique CLI réelle (`context`/`rollup`/`doctor` + résolution MCP
+  du ref blueprint) · **P6** wrapper vault · **P7** rewire du hook session-start · **P8** backfill + adoption
+  cockpit.

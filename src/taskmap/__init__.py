@@ -12,9 +12,10 @@ API publique stable (re-exports) : le moteur de graphe (P1) est exposé ici ; la
 from __future__ import annotations
 
 from taskmap.classify import classify, evaluate_dod_criteria, evaluate_trigger
+from taskmap.config import Config
 from taskmap.graph import ENGINE, load_tasks
 
-__all__ = ["ENGINE", "SCHEMA_VERSION", "__version__", "classify", "evaluate_dod_criteria",
+__all__ = ["ENGINE", "SCHEMA_VERSION", "Config", "__version__", "classify", "evaluate_dod_criteria",
            "evaluate_trigger", "load_tasks"]
 
 __version__ = "0.1.0"

@@ -40,8 +40,12 @@ dupliquée). Le modèle de données figé (slots, cardinalités, vocab) est le *
    config + core/roots   (socle stdlib : .taskmap.toml + résolution de racine)
 ```
 
-- **`core/` + `config`** (P0, présent) — résolution de racine générique (`roots`, marqueur `.taskmap.toml`/
-  `.git`, env `TASKMAP_ROOT`) + config déclarative. Zéro dépendance.
+- **`core/` + `config`** (P0+P2, présent) — résolution de racine générique (`roots`, marqueur `.taskmap.toml`/
+  `.git`, env `TASKMAP_ROOT`) + config déclarative (`.taskmap.toml`, `tomllib` stdlib). **P2** y externalise le
+  **vocab métier** (priorités ordonnées, services, catégories) et l'**emplacement des buckets** (`tasks_subdir`),
+  jusque-là codés en dur dans `graph.py`. Défauts **permissifs** : sans fichier, services/catégories sont vides
+  ⇒ aucune validation ni warning (un repo tiers n'est jamais réprimandé pour un vocab non déclaré) ; le vault
+  déclare son vocab FERMÉ dans son `.taskmap.toml` et garde ses avertissements. Zéro dépendance.
 - **`graph` + `classify` + `frontmatter`** (P1, présent) — port du moteur `vault_tasks.py`, scindé :
   - **`frontmatter`** parse le frontmatter YAML **en stdlib pur** (remplace PyYAML → le repo reste
     `dependencies=[]`) ; ne couvre que le sous-ensemble utilisé (maps, seqs, flow-seqs, scalaires typés

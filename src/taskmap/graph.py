@@ -7,10 +7,11 @@ moitié « chargement + structure » du moteur ; la classification d'état (`cla
 
   1. le parsing frontmatter passe de PyYAML (`vault_content.split_frontmatter`) au parseur stdlib interne
      (`taskmap.frontmatter`), pour tenir `dependencies=[]` (famille `-map`) ;
-  2. le chemin `.claude/tasks` en dur devient un PARAMÈTRE à défaut (`tasks_subdir`) — le default reste la
-     disposition vault ; l'injection par `.taskmap.toml` viendra en P2 (externalisation du vocab/paths).
+  2. le vocab métier (priorités/services/catégories) et l'emplacement des buckets (`.claude/tasks`) sont
+     externalisés en `.taskmap.toml` via `taskmap.config.Config` (P2) — défauts permissifs si absent.
 
-Le vocab métier (`PRIORITIES`/`SERVICES`/`CATEGORIES`) reste ici en constantes de module (externalisé en P2).
+Restent ici les constantes de GRAMMAIRE du moteur (buckets, préfixe ROADMAP, statuts terminaux…) — pas le
+vocab métier.
 
 Classification (status = source de vérité, pas le dossier) : cf. `classify.py`. Déclencheurs (`trigger`) et
 critères de DoD : cf. `classify.py`. Lecture seule : n'écrit rien, ne dérive aucun fichier.
@@ -20,6 +21,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from taskmap.config import Config  # vocab (priorités/services/catégories) + emplacement des tasks
 from taskmap.frontmatter import split_frontmatter  # home unique du parsing frontmatter (stdlib-pur)
 
 ENGINE = "task-graph-v1"
@@ -31,25 +33,15 @@ BACKTICK_ID = re.compile(r"`([a-z0-9][a-z0-9-]+)`")   # `task-id` cité dans le 
 # (kebab-case strict) : valeur user-controlled, scopée en chemin en aval → garde anti-path-traversal unique
 # ici. Invalide → warning + traité comme orchestrateur.
 SAFE_ENV = re.compile(r"[a-z0-9][a-z0-9-]*")
-# Vocab FERMÉ des priorités (source consommée par le ranking `_rank_key` de classify). P3 = « fond de
-# backlog » légitimé. Une priorité HORS vocab est signalée à la frontière (fail-soft) puis rangée en dernier.
-PRIORITIES = ("P0", "P1", "P2", "P3")
-PRIO = {p: i for i, p in enumerate(PRIORITIES)}
+# Le vocab MÉTIER (priorités ordonnées, services, catégories) et l'emplacement des tasks ne vivent plus ici :
+# externalisés en `.taskmap.toml` via `taskmap.config.Config` (P2). Un repo sans config → défauts permissifs.
 # Manifeste de PHASES d'une umbrella : liste ORDONNÉE d'étapes, chaque étape = liste d'ids parallèles.
 # `derive_phase_deps` en dérive les arêtes séquentielles. Une ligne de checklist DoD d'épic
 # `- [x] **P<n> — `slug`**` est parsée par CHECKLIST_ITEM pour la réconciliation case↔status.
 CHECKLIST_ITEM = re.compile(r"^\s*- \[([ xX])\]\s*\*\*P\d+\s*[—–-]\s*`([a-z0-9][a-z0-9-]*)`")
-# Titrage V2 : vocab FERMÉ du `service` (rangement physique backlog/<service>/) et de la `category` de
-# travail. Validés à la frontière (warning + ignoré si hors-vocab). Purement descriptifs : ne participent PAS
-# au calcul d'état. C'est ICI que vit le vocab (avec son validateur).
-SERVICES = frozenset({"orchestrateur", "cockpit", "proxmox", "arbiter-gpu", "comfyui", "mcp",
-                      "vault-tooling"})
-CATEGORIES = frozenset({"vision", "epic", "feature", "refactor", "bug", "etude-design", "validation",
-                        "infra"})
 # status par défaut DÉRIVÉ DU BUCKET quand le frontmatter n'en déclare pas.
 BUCKET_DEFAULT_STATUS = {"backlog": "backlog", "active": "active", "archive": "done"}
 TERMINAL_STATUS = {"done", "cancelled"}      # statuts terminaux ⇒ doivent vivre dans archive/
-DEFAULT_TASKS_SUBDIR = (".claude", "tasks")  # disposition vault par défaut (paramétrable ; config-driven P2)
 
 
 def _s(v) -> str:
@@ -93,14 +85,17 @@ def _parse_phase_checklist(body: str) -> dict[str, bool]:
     return out
 
 
-def load_tasks(root: Path, tasks_subdir: tuple[str, ...] = DEFAULT_TASKS_SUBDIR
+def load_tasks(root: Path, config: Config | None = None
                ) -> tuple[dict[str, dict], list[str]]:
-    """id -> record, + warnings. archive écrase backlog (done fait foi). `tasks_subdir` situe le dossier des
-    buckets sous `root` (défaut `.claude/tasks` — disposition vault ; paramétrable, config-driven en P2)."""
+    """id -> record, + warnings. archive écrase backlog (done fait foi). `config` porte le vocab (priorités/
+    services/catégories) et l'emplacement des buckets (`tasks_subdir`) ; `None` → `Config.load(root)` (lit
+    `<root>/.taskmap.toml`, défauts permissifs si absent). Vocab service/category VIDE ⇒ validation désactivée
+    (aucun warning), pour qu'un repo tiers ne soit jamais réprimandé pour un vocab qu'il n'a pas déclaré."""
     root = Path(root)
+    cfg = config if config is not None else Config.load(root)
     index: dict[str, dict] = {}
     warnings: list[str] = []
-    tasks_dir = root.joinpath(*tasks_subdir)
+    tasks_dir = root.joinpath(*cfg.tasks_subdir)
     for bucket in BUCKETS:
         d = tasks_dir / bucket
         if not d.is_dir():
@@ -143,19 +138,20 @@ def load_tasks(root: Path, tasks_subdir: tuple[str, ...] = DEFAULT_TASKS_SUBDIR
                 warnings.append(f"env invalide '{env}' sur {tid} (kebab-case strict attendu) → "
                                 f"ignoré, traité comme orchestrateur 'vault'")
                 env = ""
-            # titrage V2 : service/category validés contre le vocab fermé (fail-soft → ignoré + warning).
+            # titrage V2 : service/category validés contre le vocab fermé de la config (fail-soft → ignoré +
+            # warning). Vocab VIDE (défaut permissif) ⇒ check désactivé : la valeur est gardée telle quelle.
             service = _s(fm.get("service"))
-            if service and service not in SERVICES:
+            if service and cfg.services and service not in cfg.services:
                 warnings.append(f"service invalide '{service}' sur {tid} (hors vocab SERVICES) → ignoré")
                 service = ""
             category = _s(fm.get("category"))
-            if category and category not in CATEGORIES:
+            if category and cfg.categories and category not in cfg.categories:
                 warnings.append(f"category invalide '{category}' sur {tid} (hors vocab CATEGORIES) → ignoré")
                 category = ""
-            # priorité validée contre le vocab fermé (fail-soft) : hors-vocab signalé puis rangé en dernier.
+            # priorité validée contre le vocab de la config (défaut non vide) : hors-vocab signalé → dernier.
             priority = _s(fm.get("priority")) or "P2"
-            if priority not in PRIO:
-                warnings.append(f"priority hors vocab '{priority}' sur {tid} (attendu ∈ {PRIORITIES}) → "
+            if priority not in cfg.prio:
+                warnings.append(f"priority hors vocab '{priority}' sur {tid} (attendu ∈ {cfg.priorities}) → "
                                 f"rangée en dernier")
             tags = list(fm.get("tags") or [])
             is_epic = "epic" in tags or p.name.startswith(ROADMAP_PREFIX)

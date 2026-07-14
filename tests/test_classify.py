@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from taskmap.classify import (
+    _ready,
     burndown,
     classify,
     evaluate_dod_criteria,
@@ -25,6 +26,17 @@ TODAY = "2026-07-14"
 def classified():
     index, _ = load_tasks(FIXT)
     return classify(index, FIXT, TODAY)
+
+
+def test_ready_orders_by_provided_prio():
+    """`_ready` trie les READY selon l'ordre de priorité FOURNI (config-driven en P2), pas un ordre figé."""
+    ready = [{"id": "lo", "state": "READY", "priority": "P3", "optional": False, "env": "", "created": ""},
+             {"id": "hi", "state": "READY", "priority": "P0", "optional": False, "env": "", "created": ""}]
+    classified = {t["id"]: t for t in ready}
+    normal = [t["id"] for t in _ready(classified, None, {"P0": 0, "P1": 1, "P2": 2, "P3": 3})]
+    inverted = [t["id"] for t in _ready(classified, None, {"P3": 0, "P0": 1})]
+    assert normal == ["hi", "lo"]        # P0 avant P3
+    assert inverted == ["lo", "hi"]      # ordre inversé → P3 passe devant
 
 
 @pytest.mark.parametrize("tid,state", [

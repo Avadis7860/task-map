@@ -1,0 +1,9 @@
+# Config du vault-fixture : vocab FERMÉ (mirroir du vault réel) → les tasks hors-vocab sont signalées.
+# Sans ce fichier, les défauts seraient permissifs (services/catégories vides ⇒ aucune validation).
+[tasks]
+subdir = [".claude", "tasks"]
+
+[vocab]
+priorities = ["P0", "P1", "P2", "P3"]
+services = ["orchestrateur", "cockpit", "proxmox", "arbiter-gpu", "comfyui", "mcp", "vault-tooling"]
+categories = ["vision", "epic", "feature", "refactor", "bug", "etude-design", "validation", "infra"]

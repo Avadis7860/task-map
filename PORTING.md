@@ -26,7 +26,7 @@ motor read+WRITE confiné, MCP link-by-reference, blueprint `deterministic-tooli
 | CLI unifié (structure figée, stubs) | P0 | **porté** (squelette exécutable) |
 | `frontmatter` (parseur stdlib-pur) | P1 | **porté** (remplace PyYAML ; parité prouvée sur 464 fichiers) |
 | `graph` + `classify` (moteur) | P1 | **porté** (1:1 de `vault_tasks.py` ; READ-ONLY ; non-régression prouvée) |
-| vocab externalisé (`.taskmap.toml`) | P2 | à faire |
+| vocab externalisé (`.taskmap.toml`) | P2 | **porté** (vocab + `tasks_subdir` → config ; défauts permissifs ; parité re-prouvée) |
 | manifeste north-star | P3 | à faire (données vault) |
 | `authoring` (écriture STAMP) | P4 | à faire (gated par `stamp-write-model-reconcile`) |
 | verbes `context`/`rollup`/`doctor` | P5 | à faire (+ résolution MCP du ref blueprint) |
@@ -48,12 +48,22 @@ motor read+WRITE confiné, MCP link-by-reference, blueprint `deterministic-tooli
     chaînes quotées, commentaires, blocs `|`/`>` (littéral/folded + chomping). Hors-scope : ancres, multi-docs.
   - le chemin `.claude/tasks` en dur devient le paramètre `tasks_subdir` (défaut = disposition vault ;
     injection par config en P2). Le vocab (`PRIORITIES`/`SERVICES`/`CATEGORIES`) reste en constantes (P2).
+- **#3 — vocab externalisé en config (P2)** : le vocab métier (`PRIORITIES`/`SERVICES`/`CATEGORIES`) et
+  l'emplacement des buckets migrent de constantes de `graph.py` vers `taskmap/config.py` (`Config`, tables
+  `[vocab]`/`[tasks]` de `.taskmap.toml`). `load_tasks(root, config=None)` résout `Config.load(root)`. Défauts
+  **permissifs** (services/catégories vides ⇒ pas de validation) pour ne pas réprimander un repo tiers ; le
+  vault déclare son vocab fermé dans son propre `.taskmap.toml` (mirroir de `vault_tasks.py`) → **parité
+  conservée**. `_rank_key`/`_ready` reçoivent l'ordre des priorités en paramètre (plus de `PRIO` global). La
+  carte épics→axes reste DÉLIBÉRÉMENT hors config (donnée north-star, un seul foyer → P3).
 
-## Preuve de non-régression (P1)
+## Preuve de non-régression (P1 · re-vérifiée P2)
 
 `tools/parity_check.py` compare, sur le corpus de tasks **réel** du vault, la sortie
 `classify(load_tasks(root))` des deux moteurs — référence PyYAML (sous-process, venv scripts du vault) vs
-candidat stdlib (in-process). **Verdict 2026-07-14 : PARITÉ, diff vide sur 464 tasks** (records + warnings
-identiques). Ce n'est pas un test pytest permanent (il exige le vault) ; le filet permanent est le corpus de
-fixtures synthétique sous `tests/fixtures/vault/` (couvre trigger/phases/dod/épic/cycle/dangling/alias/
-hors-vocab, y compris `any_of`/`all_of` absents du corpus vault mais portés par la grammaire).
+candidat stdlib (in-process). **Verdict P1 (2026-07-14) : PARITÉ, diff vide sur 464 tasks** (records + warnings
+identiques). **Re-vérifié P2 (2026-07-14) : PARITÉ, diff vide sur 465 tasks** — le moteur désormais
+*config-driven* (lit `vault/.taskmap.toml`) reproduit toujours exactement le moteur vault hardcodé ; c'est la
+preuve que l'externalisation du vocab n'a rien régressé (le +1 = la task-phase P1 archivée entre-temps). Ce
+n'est pas un test pytest permanent (il exige le vault) ; le filet permanent est le corpus de fixtures
+synthétique sous `tests/fixtures/vault/` (couvre trigger/phases/dod/épic/cycle/dangling/alias/hors-vocab, y
+compris `any_of`/`all_of` absents du corpus vault mais portés par la grammaire) + `tests/test_config.py`.

@@ -12,7 +12,8 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
-from taskmap.graph import PRIO, ROADMAP_PREFIX, SAFE_ENV, _children, detect_cycles
+from taskmap.config import DEFAULT_PRIO
+from taskmap.graph import ROADMAP_PREFIX, SAFE_ENV, _children, detect_cycles
 
 TRIGGER_OPS = (">=", ">", "==")              # opérateurs autorisés de `glob_count`
 
@@ -179,8 +180,9 @@ def classify(index: dict[str, dict], root: Path | None = None,
     return out
 
 
-def _rank_key(t: dict):
-    return (PRIO.get(t["priority"], 9), 1 if t["optional"] else 0, t["created"] or "9999-99-99")
+def _rank_key(t: dict, prio: dict[str, int]):
+    """Clé de tri d'une task : (rang de priorité selon `prio`, optionnel après, date de création)."""
+    return (prio.get(t["priority"], len(prio)), 1 if t["optional"] else 0, t["created"] or "9999-99-99")
 
 
 def _in_scope(t: dict, scope: str | None) -> bool:
@@ -197,9 +199,11 @@ def _in_scope(t: dict, scope: str | None) -> bool:
     return False                                   # portée typée inconnue/invalide → aucun match
 
 
-def _ready(classified: dict[str, dict], scope: str | None) -> list[dict]:
+def _ready(classified: dict[str, dict], scope: str | None,
+           prio: dict[str, int] = DEFAULT_PRIO) -> list[dict]:
+    """Tasks READY dans `scope`, triées par priorité (`prio` = ordre issu de la config ; défaut P0…P3)."""
     return sorted((t for t in classified.values() if t["state"] == "READY" and _in_scope(t, scope)),
-                  key=_rank_key)
+                  key=lambda t: _rank_key(t, prio))
 
 
 def tree_stats(classified: dict[str, dict], scope: str | None = None) -> dict[str, int]:

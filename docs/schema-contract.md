@@ -51,6 +51,30 @@ et le **blueprint** appliqué. Esquisse de la charge utile (à geler en P5) :
 Un `blueprint.id` qui ne résout pas via le MCP est une **liaison morte signalée** (`resolved:false` + raison),
 jamais inventée.
 
+## Configuration du repo cible — `.taskmap.toml` *(P2)*
+
+À la racine du repo cible, **facultatif**. Absent → **défauts permissifs** (le moteur tourne, sans validation de
+vocab). Trois tables, toutes optionnelles ; manifeste **sec** (listes de noms / segments, zéro prose) :
+
+```toml
+[tasks]
+subdir = [".claude", "tasks"]      # emplacement des 3 buckets (backlog/active/archive) sous la racine
+
+[vocab]
+priorities = ["P0", "P1", "P2", "P3"]              # ORDONNÉ (rang de tri) ; défaut P0…P3 (jamais vide)
+services   = ["orchestrateur", "cockpit", "…"]    # vocab fermé ; ABSENT/VIDE ⇒ permissif (aucun warning)
+categories = ["epic", "feature", "refactor", "…"] # idem : vide ⇒ permissif
+
+[perimeter]                          # (posé P0, filtre dormant jusqu'à câblage ultérieur)
+include = []
+exclude = []
+```
+
+Sémantique des défauts : `priorities` porte un **ordre** requis par le ranking → défaut **non vide** (`P0…P3`),
+un vocab hors liste est signalé puis rangé en dernier. `services`/`categories` sont **descriptifs** → défaut
+**vide = permissif** : la validation ne se déclenche que si la liste est fournie. Le vault, lui, déclare son
+vocab fermé pour conserver ses avertissements à l'identique (parité avec le moteur d'origine).
+
 ## Quels fichiers sont versionnés
 
 taskmap **n'écrit pas d'index dérivé** (lecture live). Les seuls artefacts qu'il peut écrire (module `authoring`,
