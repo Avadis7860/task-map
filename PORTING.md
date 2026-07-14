@@ -29,7 +29,7 @@ motor read+WRITE confiné, MCP link-by-reference, blueprint `deterministic-tooli
 | `graph` + `classify` (moteur) | P1 | **porté** (1:1 de `vault_tasks.py` ; READ-ONLY ; non-régression prouvée) |
 | vocab externalisé (`.taskmap.toml`) | P2 | **porté** (vocab + `tasks_subdir` → config ; défauts permissifs ; parité re-prouvée) |
 | manifeste north-star (loader/validateur) | P3 | **porté** (`northstar.py` : loader stdlib + prédicats purs + rollup ; donnée vault) |
-| `authoring` (écriture STAMP) | P4 | à faire (gated par `stamp-write-model-reconcile`) |
+| `authoring` (écriture STAMP) | P4 | **porté** (gate `stamp-write-model-reconcile` résolu ; `plan_edit` pur + `apply_edit` atomique ; jamais de commit) |
 | verbes `context`/`rollup`/`doctor` | P5 | à faire (+ résolution MCP du ref blueprint) |
 | wrapper vault `task_map.py` | P6 | à faire (reste au vault) |
 | rewire hook `session-start` | P7 | à faire (reste au vault) |
@@ -63,6 +63,16 @@ motor read+WRITE confiné, MCP link-by-reference, blueprint `deterministic-tooli
   SoT-and-derive (I1) : la prose narre, le YAML dérive, l'`axis` d'une task est dérivé (épic→axe), jamais
   stocké. Recadrage vault du même jour : la prose v2/v3 (substrat Proxmox) a été réalignée en une décision
   **north-star lightweight** avant projection (cf. `2026-07-14--framework-north-star-lightweight.md`).
+
+- **#5 — authoring : le volet WRITE confiné (P4)** : nouveau module `taskmap/authoring.py` (le SEUL qui écrit)
+  + port stdlib de l'idiome d'écriture atomique du vault en `taskmap/core/atomic.py`. Le gate
+  `stamp-write-model-reconcile` est **résolu** (contrat dans la décision vault
+  `2026-07-14--stamp-write-model-contract.md`). Choix de généralisation : **édition chirurgicale ligne-à-ligne**
+  (le parseur `frontmatter` est lossy → un round-trip bruiterait le git), slots STAMP au **rang canonique**
+  (après `depends_on`), **`axis` jamais écrit** (dérivé, I1), **séparation pur/impur** (`plan_edit(text)→EditPlan`
+  pur testable in-memory + `selftest` ; `apply_edit(path, plan)` = seule I/O, atomique, no-op si inchangé),
+  **jamais de commit** (le fichier dirty est le hand-off vers la couche git/cockpit). Les verbes CLI `link`/
+  `unlink` qui consomment ce moteur restent P5.
 
 ## Preuve de non-régression (P1 · re-vérifiée P2)
 

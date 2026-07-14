@@ -63,9 +63,14 @@ dupliquée). Le modèle de données figé (slots, cardinalités, vocab) est le *
   deviné), rollup **`axis_for_epic`** (cardinalité 1 = axe primaire), `selftest`. **SoT-and-derive** (I1) : la
   prose narre (décisions north-star du repo), ce YAML dérive ; l'`axis` d'une task est **dérivé**, jamais
   stocké. La carte ne liste que les epics **vivants** ; le statut est délégué au graphe (jamais figé).
-- **`authoring`** (P4, **gated** par le deep-dive `stamp-write-model-reconcile`) — pose/mute les slots STAMP.
-  Écriture **atomique** (write-to-temp + rename), `--dry-run`, idempotente, **jamais de commit** (le vault
-  s'édite par git). Module séparé du moteur de lecture (confine l'écart read-only de la famille).
+- **`authoring`** (P4, **présent** ; gate `stamp-write-model-reconcile` résolu) — pose/mute les slots STAMP par
+  **édition chirurgicale ligne-à-ligne** (jamais de yaml round-trip : le parseur est lossy → il bruiterait le
+  git ; corps/commentaires/styles préservés). Slots au **rang canonique** (après `depends_on`), `axis` **jamais
+  écrit** (dérivé, I1). Séparation **pur/impur** (I4) : `plan_edit(text, edit) → EditPlan` est pur (zéro I/O,
+  `selftest` in-module) ; `apply_edit(path, plan)` est la seule coquille impure — écriture **atomique**
+  (tempfile même-dir + `os.replace`), no-op si inchangé (idempotence), **jamais de commit** (le fichier dirty
+  est le hand-off vers la couche git/cockpit). Module séparé du moteur de lecture (confine l'écart read-only).
+  Contrat : décision vault `2026-07-14--stamp-write-model-contract.md`. Les verbes CLI `link`/`unlink` = P5.
 - **`context` / `rollup`** (P5) — les verbes de navigation : les 3 liaisons d'une task, l'agrégat d'un axe.
 
 ## Frontières délibérées (ce que ce repo n'est PAS)

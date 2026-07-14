@@ -104,6 +104,29 @@ portée (SoT unique = son frontmatter). **Validation** (prédicats purs, `valida
 cohérent) : ids d'axes uniques ; tout `epic.axis`/`also_serves`/`gate.judges` ∈ axes — un **lien mort est
 signalé, jamais inventé**.
 
+## Authoring — contrat d'écriture *(P4)*
+
+Le module `authoring` est le **seul** qui écrit (volet WRITE de STAMP, confiné). Contrat (décision vault
+`corpus/decision/projects/2026-07-14--stamp-write-model-contract.md`, deep-dive `stamp-write-model-reconcile`) :
+
+- **Édition chirurgicale ligne-à-ligne**, jamais de yaml round-trip (le parseur `frontmatter` est *lossy* :
+  drop commentaires/blancs, réécrit `|`/`>`, coerce les dates → re-dumper bruiterait le git). Seules les lignes
+  des slots mutés changent ; corps, commentaires, styles et clés voisines restent intacts.
+- **Slots STAMP** posés en bloc au **rang canonique**, juste après `depends_on`, dans l'ordre
+  `epic · serves · unblocks · blueprint · template`. Formes : `epic: <id>` (scalaire) ;
+  `serves`/`unblocks`/`template: [a, b]` (flow-seq ; vidé ⇒ ligne retirée) ;
+  `blueprint: {id: <id>, posture: applies|tests|updates-candidate}` (flow-map). **`axis` : jamais écrit**
+  (dérivé du rollup épic→axe, I1 ; `StampEdit` n'a structurellement aucun champ `axis`).
+- **Séparation pur/impur (I4)** : `plan_edit(text, edit) -> EditPlan{new_text, changed, diff}` est **pur**
+  (zéro I/O, `selftest` in-module). **Idempotence** : sémantique déclarative d'état-cible → `changed = new != old`,
+  ré-appliquer = no-op. `apply_edit(path, plan)` est la **seule** coquille impure : écriture **atomique**
+  (tempfile même-répertoire + `os.replace` — cible intacte sur interruption), no-op si `not changed`.
+- **Jamais de commit** : le motor n'écrit que le fichier. Le fichier dirty non-committé **est** le point de
+  hand-off vers la couche git/cockpit (worktree → gate → GO humain → `dev` ff → `main`). Un outil qui
+  committerait entrerait en collision avec la doctrine writeback-post-merge-sous-GO du vault.
+- **Curseur d'autonomie** (tranché humain 2026-07-14) : **écrit par défaut, `--dry-run` prévisualise** — le CLI
+  (P5) fait `plan_edit` seul en dry-run (imprime `diff`), `plan_edit`+`apply_edit` sinon.
+
 ## Quels fichiers sont versionnés
 
 taskmap **n'écrit pas d'index dérivé** (lecture live). Les seuls artefacts qu'il peut écrire (module `authoring`,

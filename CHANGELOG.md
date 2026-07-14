@@ -4,6 +4,25 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
 
 ## [Non publié]
 
+### Ajouté (P4 — authoring : le volet WRITE de STAMP)
+- **`taskmap/authoring.py`** *(neuf)* : pose/mute les slots STAMP (`epic`/`serves`/`unblocks`/`blueprint`/
+  `template`) dans le frontmatter d'une task. Le gate `stamp-write-model-reconcile` est **résolu** (contrat dans
+  la décision vault `2026-07-14--stamp-write-model-contract.md`). **Édition chirurgicale ligne-à-ligne** (jamais
+  de yaml round-trip — le parseur est lossy, il bruiterait le git) : seules les lignes des slots mutés changent,
+  corps/commentaires/styles préservés. Slots au **rang canonique** (après `depends_on`), formes calquées sur le
+  style maison (scalaire / flow-seq / flow-map). **`axis` jamais écrit** (dérivé, I1 — `StampEdit` n'a aucun
+  champ `axis`). **Séparation pur/impur (I4)** : `plan_edit(text, edit) -> EditPlan{new_text, changed, diff}`
+  **pur** + `selftest()` in-module ; `apply_edit(path, plan)` = seule I/O, **atomique**, no-op si inchangé
+  (**idempotence** par état-cible déclaratif). **Jamais de commit** (le fichier dirty est le hand-off git/cockpit).
+- **`taskmap/core/atomic.py`** *(neuf)* : port stdlib-pur de l'idiome d'écriture atomique du vault (tempfile
+  même-répertoire + `os.replace`, cible intacte sur échec). `dependencies=[]` tenu.
+- **API publique** : `plan_edit`, `apply_edit`, `StampEdit`, `EditPlan` re-exportés depuis `taskmap`.
+- Filet : `tests/test_authoring.py` (13 tests — rang canonique, préservation corps/commentaires/quoting, diff
+  minimal, idempotence, union/retrait de listes, clear, `blueprint` + validation de posture, `axis`
+  non-écrivable, frontmatter absent refusé, écriture atomique via `tmp_path`).
+- **Curseur d'autonomie** (tranché humain) : **écrit par défaut, `--dry-run` prévisualise** (blast radius faible —
+  vault git-tracké, jamais committé par le motor). Le câblage CLI `link`/`unlink` reste **P5**.
+
 ### Ajouté (P3 — manifeste north-star)
 - **`taskmap/northstar.py`** *(neuf)* : charge + valide le **manifeste north-star** du repo cible (axes + carte
   épic→axe + gates + doctrine). `load_manifest(path)` → `Manifest` (dataclasses `Axis`/`Manifest`) via le
@@ -72,6 +91,6 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
   `NotImplementedError`).
 
 ### En cours (port depuis le vault, phase par phase — cf. ROADMAP-task-map)
-- **P4** module `authoring` (écriture des slots STAMP, atomique, jamais de commit — gated) · **P5** logique CLI
-  réelle (`context`/`rollup`/`doctor` : câble le rollup `axis_for_epic` + résolution MCP du ref blueprint) ·
-  **P6** wrapper vault · **P7** rewire du hook session-start · **P8** backfill + adoption cockpit.
+- **P5** logique CLI réelle (`context`/`rollup`/`doctor` + `link`/`unlink` : câble le rollup `axis_for_epic`,
+  consomme `authoring`, + résolution MCP du ref blueprint) · **P6** wrapper vault · **P7** rewire du hook
+  session-start · **P8** backfill + adoption cockpit.
