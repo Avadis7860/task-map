@@ -23,7 +23,8 @@ import json
 from pathlib import Path
 
 from taskmap import SCHEMA_VERSION, __version__, context
-from taskmap.authoring import AuthoringError, StampEdit, apply_edit, plan_edit
+from taskmap.anchors import build_stamp_edit
+from taskmap.authoring import AuthoringError, apply_edit, plan_edit
 from taskmap.config import Config
 from taskmap.core import roots
 from taskmap.graph import load_tasks
@@ -57,50 +58,6 @@ def _emit(data: dict) -> int:
     payload = {"ok": True, **data, "schema_version": SCHEMA_VERSION}
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
-
-
-# --- Grammaire d'ancre (link/unlink) -----------------------------------------------------------------------
-
-_LIST_KEYS: tuple[str, ...] = ("serves", "unblocks", "template")
-_ANCHOR_KEYS: tuple[str, ...] = ("epic", "blueprint", *_LIST_KEYS)
-
-
-def _build_stamp_edit(tokens: list[str], *, removing: bool) -> StampEdit:
-    """Parse les ancres `clé=valeur[:posture]` en `StampEdit`. PUR (échoue en `AuthoringError`).
-
-    `epic=<id>` · `blueprint=<id>:<posture>` · `serves=a,b` · `unblocks=a` · `template=<bp>/<n>.md`.
-    unlink : `serves=a` retire `a` ; une ancre NUE (`epic`, `blueprint`, `serves`) vide le slot (`clear`).
-    `axis=…` est refusé (slot dérivé, non écrivable).
-    """
-    kwargs: dict = {}
-    clear: set[str] = set()
-    for tok in tokens:
-        key, sep, raw = tok.partition("=")
-        key = key.strip()
-        val: str | None = raw.strip() if sep else None
-        if key == "axis":
-            raise AuthoringError("axis est dérivé (épic→axe), non écrivable — retire l'ancre 'axis='")
-        if key not in _ANCHOR_KEYS:
-            raise AuthoringError(f"ancre inconnue : {key!r} (∈ {', '.join(_ANCHOR_KEYS)})")
-        if removing and not val:
-            clear.add(key)
-            continue
-        if not val:
-            raise AuthoringError(f"ancre sans valeur : '{key}=' attend une valeur")
-        if key == "epic":
-            kwargs["epic"] = val
-        elif key == "blueprint":
-            bid, bsep, posture = val.partition(":")
-            if not bsep:
-                raise AuthoringError("'blueprint=' attend <id>:<posture> "
-                                     "(posture ∈ applies/tests/updates-candidate)")
-            kwargs["blueprint"] = (bid.strip(), posture.strip())
-        else:  # slot-liste
-            items = tuple(x.strip() for x in val.split(",") if x.strip())
-            kwargs[f"{key}_{'remove' if removing else 'add'}"] = items
-    if clear:
-        kwargs["clear"] = frozenset(clear)
-    return StampEdit(**kwargs)
 
 
 # --- Handlers ----------------------------------------------------------------------------------------------
@@ -138,7 +95,7 @@ def _run_edit(a: argparse.Namespace, *, removing: bool) -> int:
         return _emit({"ok": False, "slug": a.slug, "reason": f"task introuvable : {a.slug}"})
     path = root / rec["path"]
     try:
-        edit = _build_stamp_edit(a.anchors, removing=removing)
+        edit = build_stamp_edit(a.anchors, removing=removing)
         plan = plan_edit(path.read_text(encoding="utf-8"), edit)
     except AuthoringError as e:
         return _emit({"ok": False, "slug": a.slug, "reason": str(e)})

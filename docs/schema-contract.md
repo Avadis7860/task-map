@@ -88,7 +88,10 @@ axe inconnu → `ok:false` + `reason` (dégradation honnête, jamais un agrégat
 
 ## `link` / `unlink <slug> <ancre…>` — écriture des slots STAMP *(figée P5)*
 
-Consomment `authoring` (P4). **Grammaire d'ancre** `clé=valeur[:posture]` :
+Consomment `authoring` (P4) via le parseur **public** `taskmap.build_stamp_edit(tokens, *, removing)` (module
+`taskmap/anchors.py`, re-exporté depuis `taskmap`) — un consommateur programmatique (le wrapper vault
+`task_map.py`, P6) l'importe pour parser les ancres **à l'identique**, sans dupliquer la grammaire.
+**Grammaire d'ancre** `clé=valeur[:posture]` :
 
 | Ancre | `link` | `unlink` |
 |---|---|---|

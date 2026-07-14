@@ -4,6 +4,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
 
 ## [Non publié]
 
+### Ajouté (P6 — parseur d'ancres public, consommé par le wrapper vault)
+- **`taskmap/anchors.py`** *(neuf)* : la grammaire d'ancre `clé=valeur[:posture]` extraite de `cli.py` en un
+  module isolé (sans import du package root) et **re-exportée** en API publique `taskmap.build_stamp_edit`. Le
+  wrapper vault `task_map.py` (ROADMAP-task-map P6) l'importe pour parser les ancres **à l'identique**, au lieu
+  de dupliquer la grammaire ([[feedback-no-redundant-capability]]). `cli._run_edit` la consomme désormais aussi.
+  `SCHEMA_VERSION` inchangé (`0.1.0` — ajout **additif** d'API, aucun retrait). Filet : `tests/test_anchors.py`.
+
 ### Ajouté (P5 — verbes de lecture + résolution blueprint déléguée)
 - **`taskmap/context.py`** *(neuf)* : les verbes de LECTURE de STAMP. `build_context(root, slug)` rend les 3
   liaisons (axe **dérivé** via `northstar.axis_for_epic` · épic servi/`serves`/`unblocks` · blueprint ref+verdict) ;
