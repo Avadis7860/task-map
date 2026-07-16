@@ -20,6 +20,12 @@ venv/
 .taskmap/
 
 # ============================================================
+# Index docs-map (sous <repo>/.docsmap/) — carte de doc dérivée, bâtie par `docsmap build`
+#   sur docs/**/*.md (dont les runbooks) → reconstructible, JAMAIS versionné.
+# ============================================================
+.docsmap/
+
+# ============================================================
 # Claude — bundle committé (CLAUDE.md + .claude/) ; état LOCAL ignoré
 # ============================================================
 .claude/settings.local.json
