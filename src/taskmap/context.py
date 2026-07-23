@@ -24,7 +24,7 @@ from taskmap import northstar
 from taskmap.classify import _warnings, classify
 from taskmap.config import Config
 from taskmap.frontmatter import split_frontmatter
-from taskmap.graph import load_tasks, reconcile_epics
+from taskmap.graph import TERMINAL_STATUS, load_tasks, reconcile_epics
 
 # Un resolver blueprint : id → dict de champs résolus (title/ref…), ou None/{} = injoignable/introuvable.
 BlueprintResolver = Callable[[str], "dict | None"]
@@ -188,6 +188,13 @@ def doctor(root: Path | str, config: Config | None = None,
     if manifest is not None:
         problems += [f"north-star : {e}" for e in northstar.validate(manifest)]
     for tid, rec in index.items():
+        # Intégrité STAMP = hygiène des liaisons VIVANTES. Une task TERMINALE (done/cancelled) fige son STAMP
+        # à la clôture : son épic peut pointer un calendrier/axe depuis retiré de la carte sans que ce soit un
+        # défaut à corriger (on ne ré-ouvre pas une task close pour re-mapper un axe mort). Filtrer par STATUT
+        # (source de vérité), pas par bucket : couvre les faux positifs archivés d'un coup et n'exempte JAMAIS
+        # un vrai oubli de mapping sur une task encore vivante.
+        if rec["status"] in TERMINAL_STATUS:
+            continue
         slots = extract_stamp(_read(root, rec))
         epic = slots["epic"]
         if epic and manifest is not None and epic not in manifest.epics:

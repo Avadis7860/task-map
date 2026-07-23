@@ -175,6 +175,17 @@ def test_doctor_flags_epic_off_map(tmp_path):
     assert any("hors carte" in p for p in d["problems"])
 
 
+def test_doctor_skips_terminal_epic_off_map(tmp_path):
+    """Régression : une task TERMINALE (done/cancelled) dont l'épic est hors carte n'est PAS un problème —
+    son STAMP est figé à la clôture, on ne ré-ouvre pas une task close pour re-mapper un axe retiré. Le filtre
+    keye sur le STATUT (source de vérité), pas le bucket : ici la task vit en `active/` mais `status: done` →
+    exemptée. Une task encore vivante hors carte reste flaggée (cf. `test_doctor_flags_epic_off_map`)."""
+    dead = DOC.replace("ROADMAP-task-map", "ROADMAP-ghost").replace("status: active", "status: done")
+    _make_vault(tmp_path, {"demo": dead})
+    d = context.doctor(tmp_path, Config.load(tmp_path))
+    assert not any("hors carte" in p for p in d["problems"])
+
+
 def test_doctor_dead_blueprint_only_with_resolver(tmp_path):
     _make_vault(tmp_path, {"demo": DOC})
     # sans resolver : blueprint non résolu n'est PAS un problème dur (délégation honnête).
