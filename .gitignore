@@ -26,6 +26,12 @@ venv/
 .docsmap/
 
 # ============================================================
+# Index code-map (sous <repo>/.codemap/) — carte de code dérivée, bâtie par `codemap build`
+#   sur src/** → reconstructible, JAMAIS versionné (même doctrine que .docsmap/).
+# ============================================================
+.codemap/
+
+# ============================================================
 # Claude — bundle committé (CLAUDE.md + .claude/) ; état LOCAL ignoré
 # ============================================================
 .claude/settings.local.json

@@ -132,6 +132,9 @@ def load_tasks(root: Path, config: Config | None = None
                        else "sortir d_archive/ ou corriger le status")
                 warnings.append(f"incohérence bucket↔status : {tid} (status={raw_status}, "
                                 f"bucket={bucket}/) → {fix}")
+            # Statut EFFECTIF (déclaré, sinon dérivé du bucket) : source unique pour le record ET pour les
+            # validations qui n'ont de sens que sur une task vivante.
+            status = raw_status or BUCKET_DEFAULT_STATUS.get(bucket, "backlog")
             # `blocked_by` = alias DÉPRÉCIÉ de `depends_on` : unionné (dédupliqué) au chargement pour qu'une
             # tâche porteuse ne sorte JAMAIS faussement READY ; warning de migration tant qu'il est porté.
             depends_on = list(fm.get("depends_on") or [])
@@ -157,8 +160,14 @@ def load_tasks(root: Path, config: Config | None = None
                 warnings.append(f"category invalide '{category}' sur {tid} (hors vocab CATEGORIES) → ignoré")
                 category = ""
             # priorité validée contre le vocab de la config (défaut non vide) : hors-vocab signalé → dernier.
+            # EXEMPTION TERMINALE — le warning annonce un effet d'ORDONNANCEMENT (« rangée en dernier ») qui
+            # n'existe plus pour une task close : plus rien ne la trie, et on ne ré-ouvre pas une task done
+            # pour re-noter un champ mort. Même raisonnement, même critère (STATUT, pas bucket) que
+            # l'intégrité STAMP de `context.doctor`. Sans lui le check s'allume sur du NORMAL — faux positif
+            # PERMANENT, puisqu'une task terminale ne changera jamais. La valeur est CONSERVÉE dans le record
+            # (on ne réécrit pas l'histoire d'une task close), seul le signalement se tait.
             priority = _s(fm.get("priority")) or "P2"
-            if priority not in cfg.prio:
+            if priority not in cfg.prio and status not in TERMINAL_STATUS:
                 warnings.append(f"priority hors vocab '{priority}' sur {tid} (attendu ∈ {cfg.priorities}) → "
                                 f"rangée en dernier")
             tags = list(fm.get("tags") or [])
@@ -168,7 +177,7 @@ def load_tasks(root: Path, config: Config | None = None
                 warnings.append(f"{perr} (sur {tid})")
             rec = {
                 "id": tid,
-                "status": raw_status or BUCKET_DEFAULT_STATUS.get(bucket, "backlog"),
+                "status": status,
                 "priority": priority,
                 "created": _s(fm.get("created")),
                 "depends_on": depends_on,

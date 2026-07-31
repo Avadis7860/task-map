@@ -4,6 +4,19 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
 
 ## [Non publié]
 
+### Corrigé (check défaillant — la validation de priorité s'allumait sur des tasks closes)
+- **`load_tasks` exempte les tasks TERMINALES du warning `priority hors vocab`** (`graph.py`). Le message
+  annonce un effet d'**ordonnancement** (« → rangée en dernier ») qui n'existe plus pour une task `done`/
+  `cancelled` : plus rien ne la trie, et on ne ré-ouvre pas une task close pour re-noter un champ mort. Le
+  warning était donc un faux positif **permanent** — mesuré sur le vault : 3 tasks archivées le déclenchaient
+  à chaque run, indéfiniment. Critère = le **statut effectif** (déclaré, sinon dérivé du bucket), exactement
+  celui que `context.doctor` applique déjà à l'intégrité STAMP. La valeur `priority` reste **conservée** dans
+  le record : on tait le signalement, on ne réécrit pas l'histoire d'une task close.
+  Filet : `test_priority_hors_vocab_exempte_sur_une_task_terminale` — (a) terminale hors-vocab → silence,
+  (b) vivante hors-vocab → toujours signalée. Fixture `archive/terminal-hors-vocab.md`.
+- **`.codemap/` gitignoré** — index dérivé bâti par `codemap build`, reconstructible, au même titre que
+  `.docsmap/` déjà ignoré. Il sortait en fichier non suivi à chaque build.
+
 ### Ajouté (P6 — parseur d'ancres public, consommé par le wrapper vault)
 - **`taskmap/anchors.py`** *(neuf)* : la grammaire d'ancre `clé=valeur[:posture]` extraite de `cli.py` en un
   module isolé (sans import du package root) et **re-exportée** en API publique `taskmap.build_stamp_edit`. Le

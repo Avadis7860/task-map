@@ -13,7 +13,9 @@ Entrées : `root`, `config` (None → `Config.load(root)`). rglob `tasks_subdir/
 → **done écrase** un même id en backlog (le statut terminal fait foi). Par task : `split_frontmatter`, dérive
 `status` du bucket si absent (`BUCKET_DEFAULT_STATUS`), union `blocked_by`(déprécié)→`depends_on`, valide à la
 frontière `env`/`service`/`category`/`priority` **fail-soft** (hors-vocab → warning + ignoré, jamais un crash ;
-vocab vide ⇒ validation désactivée pour ne pas réprimander un repo tiers). Émet un record figé (id, status,
+vocab vide ⇒ validation désactivée pour ne pas réprimander un repo tiers). **Exemption terminale** : le warning
+`priority hors vocab` est tu sur une task `done`/`cancelled` — il annonce un effet d'ordonnancement qui ne la
+concerne plus, donc un faux positif permanent ; critère = statut effectif, comme l'intégrité STAMP du doctor. Émet un record figé (id, status,
 priority, depends_on, tags, env, service, category, trigger, dod_criteria, phases, phase_checklist, bucket,
 path). Signale : slug≠id, frontmatter absent/illisible, incohérence bucket↔status, id dupliqué. Termine par
 `derive_phase_deps` (arêtes de phases fusionnées dans l'index).

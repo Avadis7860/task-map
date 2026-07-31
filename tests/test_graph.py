@@ -43,6 +43,20 @@ def test_hors_vocab_failsoft_warnings():
     assert any("category invalide" in w for w in warnings)
 
 
+def test_priority_hors_vocab_exempte_sur_une_task_terminale():
+    """Le warning de priorité annonce un effet d'ORDONNANCEMENT (« → rangée en dernier ») qui n'existe plus
+    pour une task close : on ne ré-ouvre pas une task done pour re-noter une priorité que plus rien ne trie.
+    Même raisonnement, même filtre `TERMINAL_STATUS` que l'intégrité STAMP de `context.doctor` — sinon le
+    check s'allume sur ce qui est NORMAL, et un check qu'on apprend à ignorer n'est plus un check.
+
+    (a) terminale hors-vocab → silence ; (b) vivante hors-vocab → toujours signalée."""
+    index, warnings = load_tasks(FIXT)
+    assert index["terminal-hors-vocab"]["priority"] == "P9"        # valeur CONSERVÉE, jamais réécrite
+    assert not any("terminal-hors-vocab" in w for w in warnings)   # (a) silence, tous motifs confondus
+    assert any("priority hors vocab" in w and "hors-vocab" in w    # (b) la vivante reste signalée
+               for w in warnings)
+
+
 def test_permissive_config_silences_vocab_warnings():
     """Généricité (P2) : sous une config au vocab VIDE (défaut permissif), un service/catégorie 'hors vocab'
     n'est PAS réprimandé — un repo tiers ne se fait jamais signaler un vocab non déclaré. La priorité garde un
