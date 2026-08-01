@@ -39,7 +39,7 @@ un membre `phases:` en `cancelled` → warning (il bloquerait l'aval à vie).
 
 ## Zones non détaillées (signalées)
 
-- `_normalize_phases` (`:60`), `_parse_phase_checklist` (`:86`), `_children` (`:226`), `_s` (`:55`) : helpers
+- `_normalize_phases` (`:60`), `_parse_phase_checklist` (`:86`), `_children` (`:235`), `_s` (`:55`) : helpers
   de normalisation/parsing internes, lisibles au fil du code. Le cœur générique du graphe (`detect_cycles`,
   `eff_prio`, rang) est **re-exporté** ici mais documenté dans `runbooks/core.md`. Le schéma du record :
   `docs/schema-contract.md`.
