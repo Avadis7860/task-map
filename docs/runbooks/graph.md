@@ -22,7 +22,7 @@ path). Signale : slug≠id, frontmatter absent/illisible, incohérence bucket↔
 
 ## derive_phase_deps() — les arêtes séquentielles d'une umbrella phasée
 
-`src/taskmap/graph.py:197` · appelé en queue de `load_tasks`.
+`src/taskmap/graph.py:206` · appelé en queue de `load_tasks`.
 Augmente **in-mémoire** le `depends_on` des membres d'une umbrella depuis son manifeste `phases:` (liste
 ordonnée d'étapes, chaque étape = liste d'ids parallèles). Chaque membre de l'étape N reçoit (union
 dédupliquée, ordre stable) **tous les ids des étapes < N** ; les membres d'une même étape ne dépendent PAS
@@ -31,7 +31,7 @@ l'un de l'autre. **Union** avec les `depends_on` explicites (jamais d'écrasemen
 
 ## reconcile_epics() — checklist DoD prose ↔ status réel
 
-`src/taskmap/graph.py:237` · appelé par `context.doctor` (advisory).
+`src/taskmap/graph.py:246` · appelé par `context.doctor` (advisory).
 PUR, read-only. Confronte la checklist `- [x] **P<n> — `slug`**` d'une umbrella (`phase_checklist`) au status
 RÉEL des sous-tasks. Trois cas → warning (dérive de PROSE ⇒ **toujours warn, jamais error**) : `[x]`+status≠done
 (case en avance), `[ ]`+status==done (case en retard), slug listé sans fichier (non matérialisée). En prime :
