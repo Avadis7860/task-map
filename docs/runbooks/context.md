@@ -29,6 +29,11 @@ via `classify`), manifeste north-star incohérent (`northstar.validate`), intég
 blueprint mort **si** un resolver est fourni). `warnings` (advisory, **ne bascule PAS** `ok`) : hygiène tasks
 déjà surfacée (réconciliation ROADMAP via `reconcile_epics`, WIP, différés, vocab), dédupliquée des
 incohérences dures. Sortie `{checked, problems, warnings, ok}`.
+**L'intégrité STAMP ne juge que les liaisons VIVANTES** : une task terminale (`done`/`cancelled`) fige son
+STAMP à la clôture, et son épic peut pointer un axe depuis retiré de la carte sans que ce soit un défaut à
+corriger — on ne rouvre pas une task close pour re-mapper un axe mort. Le filtre porte sur le **statut**
+(`TERMINAL_STATUS`), pas sur le bucket d'archivage : c'est ce qui couvre les faux positifs archivés d'un
+coup sans jamais exempter un vrai oubli de mapping sur une task encore vivante.
 
 ## extract_stamp() — slots STAMP du frontmatter, normalisés (pur)
 
@@ -52,6 +57,8 @@ et le verdict sont injectés tels quels.
 
 ## Zones non détaillées
 
+- `selftest` — l'auto-test du module : prouve que le contexte se construit et que le doctor répond sur un
+  arbre témoin, sans dépendre d'un vault réel.
 - `_load_manifest` (`:114`, charge le manifeste si configuré + présent, None sinon), `_read` (`:127`),
   `_scalar`/`_strlist`/`_blueprint` (`:54`–`:62`, normalisation) : coquilles/helpers triviaux. Le contrat de
   dégradation MCP : la décision vault citée en tête.
