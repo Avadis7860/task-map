@@ -4,7 +4,7 @@
 > mission dans le tissu du travail (axe north-star · épic servi/débloqué · blueprint appliqué) plutôt que dans
 > une liste mtime plate.
 
-**Statut : privé · pré-opérationnel (bootstrap P0 — squelette exécutable, moteur en cours de port).**
+**Statut : privé · opérationnel (P0→P6 livrés — moteur porté, verbes en service).**
 
 6ᵉ outil de la famille `-map` (code-map · docs-map · front-map · bundle-map · mcp-catalogs). Outil **autonome**,
 sans service ni réseau : un CLI qui lit les tasks **en live** et rend du JSON stable, consommé par le hook
@@ -14,16 +14,15 @@ sans service ni réseau : un CLI qui lit les tasks **en live** et rend du JSON s
 
 | Verbe | Rôle | Statut |
 |---|---|---|
-| `taskmap context <slug>` | les 3 liaisons STAMP d'une task : axe + épic servi/débloqué + blueprint | P5 |
-| `taskmap rollup axis <nom>` | agrège tout le travail sous un axe north-star | P5 |
-| `taskmap link <slug> <ancre…>` | pose un slot STAMP (écriture atomique, jamais de commit) | P4 |
-| `taskmap unlink <slug> <ancre…>` | retire un slot STAMP | P4 |
-| `taskmap doctor` | cohérence des liaisons (blueprint mort, épic inexistant, axe non résolu) | P5 |
+| `taskmap context <slug>` | les 3 liaisons STAMP d'une task : axe + épic servi/débloqué + blueprint | P5 ✓ |
+| `taskmap rollup axis <nom>` | agrège tout le travail sous un axe north-star | P5 ✓ |
+| `taskmap link <slug> <ancre…>` | pose un slot STAMP (écriture atomique, jamais de commit) | P4 ✓ |
+| `taskmap unlink <slug> <ancre…>` | retire un slot STAMP | P4 ✓ |
+| `taskmap doctor` | cohérence des liaisons (blueprint mort, épic inexistant, axe non résolu) | P5 ✓ |
 | `taskmap --schema-version` | version du contrat de sortie (négociation consommateur) | P0 ✓ |
 
-À P0 la **structure** de la CLI est figée et le squelette s'exécute (`--help`/`--version`/`--schema-version`) ;
-les verbes sont des stubs honnêtes (`NotImplementedError` avec pointeur de phase) tant que le moteur n'est pas
-porté.
+La **structure** de la CLI est figée depuis P0 et le moteur est porté : les six surfaces ci-dessus
+répondent. `taskmap doctor --root <vault>` vérifie 670 tasks sans problème sur le vault de référence.
 
 ## Principes
 

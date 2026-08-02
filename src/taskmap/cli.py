@@ -1,9 +1,8 @@
 """cli — porte d'entrée unifiée `taskmap` (moteur STAMP : liaison des tasks à leurs ancrages).
 
 Une commande, des sous-commandes, un `--root`, un `.taskmap.toml`. Le câblage argparse est complet ici (la
-STRUCTURE de la CLI est **figée** dès P0) ; chaque handler délègue à sa couche. À P0 les couches ne sont pas
-encore portées : les handlers lèvent `NotImplementedError` avec un pointeur de phase — le squelette s'exécute
-et `--help`/`--version`/`--schema-version` fonctionnent.
+STRUCTURE de la CLI est **figée** dès P0) ; chaque handler délègue à sa couche. Les couches sont portées
+(P1→P6) : plus aucun handler ne lève d'exception de non-implémentation.
 
 Contrairement à code-map, taskmap **n'a pas d'index dérivé bâti** : le corpus tasks est minuscule et lu en
 **live** (comme bundle_map lit ses manifestes). Donc pas de sous-commande `build`, pas de `--out`, pas de

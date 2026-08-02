@@ -1,0 +1,14 @@
+# .docsmap.toml — carte de doc de ce repo (docs-map, injecté). Valeurs = défauts sauf `extra`.
+# Sert aussi de repère de racine. Sans lui, docs-map applique les défauts génériques (`docs/**/*.md`).
+
+[sources]
+# Racine de la prose markdown à indexer (relative à la racine du repo).
+docs = "docs"
+
+# Motif des fichiers sous `docs` (récursif). Markdown seulement (carte de headings).
+glob = "**/*.md"
+
+# Markdown SUPPLÉMENTAIRE hors `docs` à inclure : le README racine — la porte d'entrée du repo, hors
+# index jusqu'ici, donc invisible à `docsmap where` et jamais relue (elle a dérivé 13 commits durant,
+# jusqu'à annoncer un bootstrap P0 quand P6 était livré).
+extra = ["README.md"]
