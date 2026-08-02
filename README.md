@@ -54,4 +54,8 @@ Voir [`docs/architecture.md`](./docs/architecture.md) (protocole STAMP + couches
 
 ## Licence
 
-Propriétaire — voir [`LICENSE`](./LICENSE). Tous droits réservés.
+**Apache-2.0** — voir [`LICENSE`](./LICENSE) et [`NOTICE`](./NOTICE).
+
+Installation, exécution, modification et redistribution sont accordées, y compris pour un usage
+commercial. La §6 ne concède aucun droit sur le **nom** ; la clause de brevets (§3) accorde les brevets
+nécessaires et se retire de plein droit contre qui attaque le projet en contrefaçon.
