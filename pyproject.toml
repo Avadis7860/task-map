@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "task-map"
 version = "0.1.0"
-description = "Moteur déterministe de liaison des tasks à leurs ancrages (protocole STAMP) — axe north-star, épic servi/débloqué, blueprint appliqué. 6ᵉ outil de la famille -map."
+description = "Deterministic engine over a graph of missions: readiness ranking over the dependency DAG, and STAMP anchoring (north-star axis, epic served/unblocked, blueprint applied). Sixth tool of the -map family."
 readme = "README.md"
 requires-python = ">=3.11"  # tomllib stdlib (config .taskmap.toml sans dépendance)
 license = "Apache-2.0"
@@ -13,7 +13,7 @@ license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "AvAgency", email = "contact@avagency.pro" }]
 keywords = ["task-map", "stamp", "northstar", "backlog", "blueprint", "task-graph", "prompt-context"]
 # Cœur stdlib-pur : AUCUNE dépendance obligatoire → installable partout, offline, sans compilation native.
-# (La résolution des refs blueprint via le MCP mcp-catalogs, en P5, sera une intégration optionnelle à
+# (La résolution des refs blueprint via le MCP forgemaster-catalogs, en P5, sera une intégration optionnelle à
 # dégradation honnête — jamais une dépendance dure.)
 dependencies = []
 

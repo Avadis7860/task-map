@@ -27,7 +27,7 @@ Source unique de la grammaire filesystem, partagée avec la DoD.
 
 ## evaluate_dod_criteria() — les critères de clôture (composition ET)
 
-`src/taskmap/classify.py:102` · appelé par `/task-close` (via le wrapper vault) et le cockpit.
+`src/taskmap/classify.py:102` · appelé par `/task-close` (via le wrapper vault) et le forgemaster.
 `(tous_franchis, résultats[])`. READ-ONLY : tout verdict Tier-1.5 est **injecté** (`feature_verify_status`).
 `criteria` en composition **ET**. Réutilise la grammaire déterministe de `evaluate_trigger` (les 4 prédicats
 `DOD_DETERMINISTIC`) et ajoute `feature_verified` (lit un statut injecté : present∧fresh∧ok∧¬blocking).
@@ -51,7 +51,7 @@ hors seau sont surfacés ailleurs.
 
 ## is_resettable_state() / reset_block_reason() — éligibilité smart-reset
 
-`src/taskmap/classify.py:241` / `:246` · appelés par le dispatch (cockpit).
+`src/taskmap/classify.py:241` / `:246` · appelés par le dispatch (forgemaster).
 PUR, source de vérité unique. Un (re-)dispatch n'est légitime **que** depuis READY (activable) ou DONE (refaire
 un travail terminé) — `RESETTABLE_STATES`. Tout autre état (BLOCKED*, ACTIVE, CANCELLED, EPIC, ERROR, CYCLE) →
 `reset_block_reason` rend un motif lisible du refus.

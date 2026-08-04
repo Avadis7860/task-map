@@ -5,5 +5,5 @@ subdir = [".claude", "tasks"]
 
 [vocab]
 priorities = ["P0", "P1", "P2", "P3"]
-services = ["orchestrateur", "cockpit", "proxmox", "arbiter-gpu", "comfyui", "mcp", "vault-tooling"]
+services = ["orchestrateur", "forgemaster", "proxmox", "arbiter-gpu", "comfyui", "mcp", "vault-tooling"]
 categories = ["vision", "epic", "feature", "refactor", "bug", "etude-design", "validation", "infra"]

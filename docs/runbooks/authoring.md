@@ -6,7 +6,7 @@ la famille `-map`, **confiné** ici (module séparé du moteur de lecture). Cont
 round-trip — le parseur est lossy, re-dumper bruiterait le git), **ordre canonique** du bloc STAMP après
 `depends_on`, **`axis` jamais écrit** (dérivé, I1), **idempotence** (état-cible déclaratif), **séparation
 pur/impur** (I4 : `plan_edit` pur, `apply_edit` seule coquille impure), **jamais de commit** (le fichier dirty
-est le hand-off vers la couche git/cockpit).
+est le hand-off vers la couche git/forgemaster).
 
 ## build_stamp_edit() — grammaire d'ancre `clé=valeur[:posture]` → StampEdit
 
@@ -29,7 +29,7 @@ terminé. **Idempotence** : ré-appliquer le même edit → `changed=False`.
 
 `src/taskmap/authoring.py:206` · appelé par `cli._run_edit` (hors `--dry-run`).
 Écrit `plan.new_text` **atomiquement** (`core.atomic.write_text`) ; **no-op** (retourne False) si
-`not plan.changed`. N'exécute **jamais** de git : le fichier dirty non-committé est le hand-off vers git/cockpit.
+`not plan.changed`. N'exécute **jamais** de git : le fichier dirty non-committé est le hand-off vers git/forgemaster.
 
 ## StampEdit / EditPlan — les dataclasses du contrat
 

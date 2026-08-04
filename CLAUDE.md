@@ -19,7 +19,7 @@
   contrat figé** inter-repos (`{ok, schema_version}`, rc 0 pour lecture ; changer un champ figé → bump +
   changelog) · **lecture live** (pas d'index dérivé — corpus tasks minuscule, comme bundle_map) · **jamais de
   cap silencieux** · **rien de spécifique-projet en dur** (`.taskmap.toml`) · **jamais de git** (l'écriture pose
-  le fichier, un humain/le cockpit commit).
+  le fichier, un humain/le forgemaster commit).
 - Fixtures minuscules, **noms fictifs** (jamais un vrai basename de projet).
 
 ## Index (interroge, ne lis pas en bloc)
@@ -32,14 +32,14 @@
 
 ## Outils à disposition (embarqués dans ce repo)
 
-- **Skills** (`.claude/skills/`) : `work-loop` (boucle de travail sûre, lightweight, sans cockpit) ·
+- **Skills** (`.claude/skills/`) : `work-loop` (boucle de travail sûre, lightweight, sans forgemaster) ·
   `quality-gate` (ruff + mypy + pytest).
 - **Hook** (`.claude/hooks/post-edit-check.py`) : `py_compile` + `ruff` sur le `.py` touché à chaque édition.
 - **Persona** (`.claude/output-styles/tool-builder.md`) : posture outilleur déterministe.
 
-## Rapport au cockpit (auto-travaillable seul)
+## Rapport au forgemaster (auto-travaillable seul)
 
 Ce repo est **auto-travaillable en autonomie légère** : un clone suffit pour qu'un worker — IA `claude` **ou**
-humain — le fasse évoluer en sûreté via `work-loop`, **sans aucun centre de contrôle**. Le **cockpit** automatise
+humain — le fasse évoluer en sûreté via `work-loop`, **sans aucun centre de contrôle**. Le **forgemaster** automatise
 exactement cette boucle par-dessus ; il est **optionnel**, jamais requis. Mêmes invariants des deux côtés :
 worktree `feature` depuis `dev`, gate vert avant merge, `main` protégé, **GO humain sur tout acte irréversible**.

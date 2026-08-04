@@ -199,7 +199,7 @@ def _ready(classified: dict[str, dict], scope: str | None,
            prio: dict[str, int] = DEFAULT_PRIO) -> list[dict]:
     """Tasks READY dans `scope`, triées par le rang canonique du cœur (`eff_prio` + tiebreaks). `prio` =
     ordre issu de la config (défaut P0…P3). Adaptateur mince : traduit le `scope` STAMP en prédicat, délègue
-    le rang à `taskmap.core.graph.rank_ready` (source unique, partagée avec le consommateur cockpit)."""
+    le rang à `taskmap.core.graph.rank_ready` (source unique, partagée avec le consommateur forgemaster)."""
     return rank_ready(classified, prio, scope_pred=lambda t: _in_scope(t, scope))
 
 

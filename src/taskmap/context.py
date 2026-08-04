@@ -6,7 +6,7 @@ retient que `depends_on`. `axis` n'est JAMAIS lu ni stocké : il est **dérivé*
 (épic → axe primaire ; `None` honnête hors carte), I1 (pas de 2ᵉ SoT).
 
 **Résolution du blueprint ref DÉLÉGUÉE** au consommateur MCP (primaire = une session Claude, qui a déjà
-`.mcp.json` + Bearer ; ou le cockpit). task-map reste offline / stdlib-pur / sans secret : par défaut le
+`.mcp.json` + Bearer ; ou le forgemaster). task-map reste offline / stdlib-pur / sans secret : par défaut le
 verdict est `resolved:false` + raison honnête (jamais inventé). Un **seam d'injection** `resolve_blueprint`
 permet à un consommateur programmatique de résoudre. Contrat : décision vault
 `corpus/decision/projects/2026-07-14--taskmap-mcp-degradation-contract.md`.

@@ -1,6 +1,6 @@
 # Contrat de schéma (en cours de gel)
 
-Ces schémas sont un **contrat inter-repos** : le hook `session-start` du vault et (à terme) le `cockpit` lisent
+Ces schémas sont un **contrat inter-repos** : le hook `session-start` du vault et (à terme) le `forgemaster` lisent
 la sortie de `taskmap`. On peut faire évoluer un **moteur** interne sans changer le schéma ; changer un schéma
 (retrait/renommage d'un champ figé) est un **breaking change** — bump de version + entrée CHANGELOG.
 
@@ -54,7 +54,7 @@ appliqué (ref + verdict). Charge utile :
 - **`blueprint`** est `null` si non lié. Sinon `{id, posture}` + un **verdict** : par **défaut**
   `resolved:false` + `reason` (« résolution déléguée au consommateur MCP ») — task-map **ne compose pas le
   MCP** ; il émet le ref (link-by-reference déterministe-local) et le **consommateur** (une session Claude qui a
-  déjà `.mcp.json`, ou le cockpit) le résout via `read(type=blueprint, ref=<id>)`. Un consommateur programmatique
+  déjà `.mcp.json`, ou le forgemaster) le résout via `read(type=blueprint, ref=<id>)`. Un consommateur programmatique
   peut injecter un resolver (seam `resolve_blueprint`) : un dict véridique → `resolved:true` (+ champs fusionnés) ;
   un vide/`empty:true` → **liaison morte signalée**, jamais inventée. Contrat : décision vault
   `corpus/decision/projects/2026-07-14--taskmap-mcp-degradation-contract.md`.
@@ -101,7 +101,7 @@ Consomment `authoring` (P4) via le parseur **public** `taskmap.build_stamp_edit(
 | `axis=…` | **refusé** (dérivé, non écrivable) | refusé |
 
 `--dry-run` émet `{slug, dry_run:true, changed, diff}` **sans écrire** ; sinon `{slug, changed, applied}` après
-écriture **atomique** (jamais de commit — le fichier dirty est le hand-off git/cockpit). Ancre invalide / posture
+écriture **atomique** (jamais de commit — le fichier dirty est le hand-off git/forgemaster). Ancre invalide / posture
 invalide / task absente → `ok:false` + `reason` (rc 0).
 
 ## Configuration du repo cible — `.taskmap.toml` *(P2)*
@@ -115,7 +115,7 @@ subdir = [".claude", "tasks"]      # emplacement des 3 buckets (backlog/active/a
 
 [vocab]
 priorities = ["P0", "P1", "P2", "P3"]              # ORDONNÉ (rang de tri) ; défaut P0…P3 (jamais vide)
-services   = ["orchestrateur", "cockpit", "…"]    # vocab fermé ; ABSENT/VIDE ⇒ permissif (aucun warning)
+services   = ["orchestrateur", "forgemaster", "…"]    # vocab fermé ; ABSENT/VIDE ⇒ permissif (aucun warning)
 categories = ["epic", "feature", "refactor", "…"] # idem : vide ⇒ permissif
 
 [perimeter]                          # (posé P0, filtre dormant jusqu'à câblage ultérieur)
@@ -175,7 +175,7 @@ Le module `authoring` est le **seul** qui écrit (volet WRITE de STAMP, confiné
   ré-appliquer = no-op. `apply_edit(path, plan)` est la **seule** coquille impure : écriture **atomique**
   (tempfile même-répertoire + `os.replace` — cible intacte sur interruption), no-op si `not changed`.
 - **Jamais de commit** : le motor n'écrit que le fichier. Le fichier dirty non-committé **est** le point de
-  hand-off vers la couche git/cockpit (worktree → gate → GO humain → `dev` ff → `main`). Un outil qui
+  hand-off vers la couche git/forgemaster (worktree → gate → GO humain → `dev` ff → `main`). Un outil qui
   committerait entrerait en collision avec la doctrine writeback-post-merge-sous-GO du vault.
 - **Curseur d'autonomie** (tranché humain 2026-07-14) : **écrit par défaut, `--dry-run` prévisualise** — le CLI
   (P5) fait `plan_edit` seul en dry-run (imprime `diff`), `plan_edit`+`apply_edit` sinon.

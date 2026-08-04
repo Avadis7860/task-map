@@ -6,7 +6,7 @@ Un CLI **déterministe** qui répond, pour une task du système de gestion du tr
 « quel **axe** north-star sert-elle ? », « quel **épic/backlog** sert-elle et débloque-t-elle ? », « quel
 **blueprint** applique-t-elle / met-elle à l'épreuve / est-elle candidate à mettre à jour ? » — au lieu d'une
 liste mtime plate sans ancrage. Pas de service, pas de base : un CLI qui lit les tasks **en live** et rend du
-JSON stable, consommé par le hook `session-start` du vault et (à terme) le cockpit.
+JSON stable, consommé par le hook `session-start` du vault et (à terme) le forgemaster.
 
 Origine : distillation du moteur de graphe `vault_tasks.py` du vault (`classify`, DAG `depends_on`, phases
 d'épic), rendu **générique** (aucun chemin en dur) et **empaqueté** (vrai package installable au lieu de scripts
@@ -51,8 +51,8 @@ dupliquée). Le modèle de données figé (slots, cardinalités, vocab) est le *
     **`eff_prio`** (priorité **effective transitive** : une task qui débloque plus prioritaire remonte) et le
     **rang canonique** `rank_key`/`rank_ready`/`resolve_next`. Ce cœur ne connaît ni markdown ni STAMP — juste
     une forme de record minimale (`id`/`depends_on`/`priority`/`created`/`optional`). Le vault le nourrit via
-    `classify` ; un tiers (le cockpit) le nourrit avec ses propres rows projetés → **une seule copie vivante du
-    moteur, dé-fork par import runtime** au lieu d'un fork vendoré. `eff_prio` est **graduée** du fork cockpit
+    `classify` ; un tiers (le forgemaster) le nourrit avec ses propres rows projetés → **une seule copie vivante du
+    moteur, dé-fork par import runtime** au lieu d'un fork vendoré. `eff_prio` est **graduée** du fork forgemaster
     (distillation-vers-le-centre) : la bonne idée du fork monte dans le SoT.
 - **`graph` + `classify` + `frontmatter`** (P1, présent) — port du moteur `vault_tasks.py`, scindé :
   - **`frontmatter`** parse le frontmatter YAML **en stdlib pur** (remplace PyYAML → le repo reste
@@ -77,7 +77,7 @@ dupliquée). Le modèle de données figé (slots, cardinalités, vocab) est le *
   écrit** (dérivé, I1). Séparation **pur/impur** (I4) : `plan_edit(text, edit) → EditPlan` est pur (zéro I/O,
   `selftest` in-module) ; `apply_edit(path, plan)` est la seule coquille impure — écriture **atomique**
   (tempfile même-dir + `os.replace`), no-op si inchangé (idempotence), **jamais de commit** (le fichier dirty
-  est le hand-off vers la couche git/cockpit). Module séparé du moteur de lecture (confine l'écart read-only).
+  est le hand-off vers la couche git/forgemaster). Module séparé du moteur de lecture (confine l'écart read-only).
   Contrat : décision vault `2026-07-14--stamp-write-model-contract.md`. Les verbes CLI `link`/`unlink` = P5.
 - **`context` / `rollup` / `doctor`** (P5, **présent**) — les verbes de lecture. `context <slug>` rend les 3
   liaisons STAMP (axe **dérivé** via `northstar.axis_for_epic` · épic servi/`serves`/`unblocks` · blueprint
@@ -86,7 +86,7 @@ dupliquée). Le modèle de données figé (slots, cardinalités, vocab) est le *
   **warnings advisory** (hygiène tasks, matériel de remontée proactive). Les slots STAMP sont **re-parsés du
   frontmatter** (le moteur de graphe ne retient que `depends_on`) ; `axis` n'est jamais lu, seulement dérivé.
   **Résolution du `blueprint:` ref DÉLÉGUÉE** au consommateur MCP (une session Claude a déjà `.mcp.json`, ou le
-  cockpit) : `resolved:false` + raison honnête par défaut, **seam d'injection** `resolve_blueprint` pour un
+  forgemaster) : `resolved:false` + raison honnête par défaut, **seam d'injection** `resolve_blueprint` pour un
   consommateur programmatique — task-map ne compose jamais le MCP (offline / stdlib-pur / sans secret ; contrat
   `2026-07-14--taskmap-mcp-degradation-contract.md`). `link`/`unlink` consomment `authoring` (P4).
 
@@ -95,12 +95,13 @@ dupliquée). Le modèle de données figé (slots, cardinalités, vocab) est le *
 - **Pas d'index dérivé bâti** (divergence assumée vs code-map). Le corpus tasks est minuscule et lu **en live**
   (comme bundle_map lit ses manifestes) → **pas de `build`, pas de `--out`, pas de garde index-absent**. La
   fraîcheur-par-hash d'un index (invariant I2 de la famille) ne s'applique donc pas aux lectures.
-- **Pas de recopie du corpus capital.** Les blueprints/templates vivent dans `mcp-catalogs-data`, servis
-  **uniquement** par le MCP `mcp-catalogs`. taskmap stocke un **ref** (link-by-reference, déterministe-local)
+- **Pas de recopie du corpus capital.** Les blueprints/templates vivent dans le dépôt de données monté par
+  le serveur, servis **uniquement** par le MCP `forgemaster-catalogs` — jamais recopiés ici. taskmap stocke
+  un **ref** (link-by-reference, déterministe-local)
   et le **résout** via le MCP en P5 — intégration **optionnelle à dégradation honnête** (MCP down → utile sur
   les liens locaux, dit que le blueprint n'est pas atteignable, jamais inventé). Jamais une dépendance dure.
 - **Pas de git, jamais.** Aucun shell-out git : ni pour la fraîcheur (lecture live), ni pour l'écriture
-  (`authoring` écrit le fichier, un humain/le cockpit commit).
+  (`authoring` écrit le fichier, un humain/le forgemaster commit).
 
 ## CLI unifié
 

@@ -1,6 +1,7 @@
 """test_core — contrat du cœur de graphe GÉNÉRIQUE (`taskmap.core.graph`), éprouvé façon consommateur tiers.
 
-Zéro markdown, zéro slot STAMP : des dicts plats (la forme que le cockpit projettera depuis ses rows SQLite).
+Zéro markdown, zéro slot STAMP : des dicts plats (la forme que le forgemaster projettera depuis ses rows
+SQLite).
 Verrouille : parité de `detect_cycles` après déplacement, le **lift transitif** de `eff_prio` (un P3 qui
 débloque un P0 devient NEXT), et l'ordre total de `rank_ready`/`resolve_next` (tiebreak `id`, robustesse au
 cycle, fallback priorité inconnue, filtrage `scope_pred`).
@@ -18,7 +19,7 @@ PRIO = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 
 
 def _ready(**over) -> dict:
-    """Record générique READY minimal (façon row projeté cockpit : id, priority, depends_on, created)."""
+    """Record générique READY minimal (façon row projeté forgemaster : id, priority, depends_on, created)."""
     rec = {"id": "x", "state": "READY", "priority": "P2", "depends_on": [], "created": ""}
     rec.update(over)
     return rec

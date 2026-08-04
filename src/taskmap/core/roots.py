@@ -4,7 +4,7 @@ Port + GÉNÉRALISATION de vault `lib/core/roots.py`. L'original cherchait un va
 donc spécifique. Ici, aucune notion de vault — on résout la racine de tout repo cible, dans l'ordre :
 
     1. `--root` explicite (le plus spécifique) ;
-    2. `$TASKMAP_ROOT` (posé par un déploiement / le cockpit) ;
+    2. `$TASKMAP_ROOT` (posé par un déploiement / le forgemaster) ;
     3. remontée depuis `start` (ou le cwd) jusqu'au premier répertoire-repère contenant
        `.taskmap.toml` OU `.git/` ;
     4. sinon, `start` (ou cwd) tel quel.

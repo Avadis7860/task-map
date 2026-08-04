@@ -4,6 +4,23 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
 
 ## [Non publié]
 
+### La surface publique s'adresse à un inconnu — README + CONTRIBUTING en US, et le consommateur reprend son nom
+- **`README.md` réécrit en anglais**, pas traduit : un lecteur extérieur a besoin de savoir ce que l'outil
+  **n'est pas** (pas un tracker ni une UI, pas une étape de build, jamais de git, rien de spécifique-projet,
+  pas un client réseau) autant que ce qu'il est. Le « Statut : privé » de l'en-tête disparaît : il devenait
+  faux à la seconde de la bascule de visibilité.
+- **`CONTRIBUTING.md` en US** — même politique, mêmes mots que les autres dépôts de la famille.
+- **`description` de `pyproject.toml` en US** — c'est de la métadonnée publique du paquet.
+- **Le consommateur s'appelait `cockpit`, il s'appelle `forgemaster` depuis le 2026-08-04.** 54 mentions en
+  prose (docstrings, `docs/`, `CLAUDE.md`, `PORTING.md`, skills, fixtures) suivent le nom réel du produit
+  qui consomme ce moteur. **Ce fichier-ci est épargné en bloc** : les entrées antérieures décrivent des faits
+  qui ont eu lieu sous l'ancien nom, et un changelog qu'on réécrit n'est plus un changelog. Idem pour
+  `mcp-catalogs` → **`forgemaster-catalogs`** (le serveur MCP) — mais **`mcp-catalogs-data`**, le dépôt de
+  DONNÉES, n'a **pas** changé de nom : c'est le faux ami exact qu'une substitution non ancrée aurait cassé,
+  et il a été masqué puis compté.
+- **Aucun identifiant fonctionnel n'a bougé** : ni `aud`/`iss` du contrat JWT, ni un nom de verbe, ni une
+  clé de sortie. Ce lot ne touche que de la prose et de la métadonnée.
+
 ### Corrigé (check défaillant — la validation de priorité s'allumait sur des tasks closes)
 - **`load_tasks` exempte les tasks TERMINALES du warning `priority hors vocab`** (`graph.py`). Le message
   annonce un effet d'**ordonnancement** (« → rangée en dernier ») qui n'existe plus pour une task `done`/

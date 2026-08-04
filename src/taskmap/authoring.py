@@ -206,7 +206,7 @@ def _key_spans(fm_lines: list[str]) -> list[tuple[str, int, int]]:
 def apply_edit(path: Path | str, plan: EditPlan) -> bool:
     """Écrit `plan.new_text` dans `path` de façon atomique. No-op (retourne False) si `not plan.changed`.
 
-    N'exécute JAMAIS de git : le fichier dirty non-committé est le hand-off vers la couche git/cockpit.
+    N'exécute JAMAIS de git : le fichier dirty non-committé est le hand-off vers la couche git/forgemaster.
     """
     if not plan.changed:
         return False

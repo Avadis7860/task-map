@@ -2,13 +2,13 @@
 
 `src/taskmap/core/` — primitives sans dépendance, **data-shape-agnostiques**. `core/graph` est le foyer public
 du **moteur de séquencement** annoncé pour un usage cross-repo : le vault le nourrit avec ses records STAMP, un
-tiers (le cockpit) avec ses propres rows projetés (SQLite) → **une seule copie vivante du moteur, dé-fork par
+tiers (le forgemaster) avec ses propres rows projetés (SQLite) → **une seule copie vivante du moteur, dé-fork par
 import runtime**. Le cœur ne connaît ni markdown, ni slots STAMP, ni vocab métier — juste une forme de record
 minimale (`id`/`depends_on`/`priority`/`created`/`optional`), lue **défensivement**.
 
 ## core.graph.eff_prio() — priorité effective transitive
 
-`src/taskmap/core/graph.py:55` · appelé par `rank_ready` · **graduée du fork cockpit** (distillation-vers-le-centre).
+`src/taskmap/core/graph.py:55` · appelé par `rank_ready` · **graduée du fork forgemaster** (distillation-vers-le-centre).
 `eff(t) = min(rang propre, min sur dépendants transitifs)` : une task de faible priorité qui **débloque** une
 task plus prioritaire **remonte**. `prio` = vocab ORDONNÉ (P0=0…) ; hors-vocab ⇒ `len(prio)` (fail-soft,
 dernier). Récursion sur les arêtes **inverses** (`dependents`), **mémoïsée**, garde de pile anti-cycle. C'est le
@@ -17,10 +17,10 @@ gain de `eff_prio` sur l'ancien rang plat, devenu le rang canonique des DEUX con
 ## core.graph.rank_key() / rank_ready() / resolve_next() — le rang canonique
 
 `src/taskmap/core/graph.py:83` (rank_key) · `:91` (rank_ready) · `:101` (resolve_next).
-`rank_key` : ordre total `(eff_prio ↑, optionnel après, création ↑, id)` — zéro ex-æquo ; pour un row cockpit
+`rank_key` : ordre total `(eff_prio ↑, optionnel après, création ↑, id)` — zéro ex-æquo ; pour un row forgemaster
 (`optional`=0, `id`≡`slug`) se réduit à `(eff, created, id)` (ordre du fork **préservé**). `rank_ready` : les
 tasks **READY** dans `scope_pred`, triées par ce rang (tête = la NEXT dispatchable). `resolve_next` : la tête,
-ou `None`. Source **unique** du ranking, partagée vault ↔ cockpit.
+ou `None`. Source **unique** du ranking, partagée vault ↔ forgemaster.
 
 ## core.graph.detect_cycles() — membres d'un cycle de dépendances
 

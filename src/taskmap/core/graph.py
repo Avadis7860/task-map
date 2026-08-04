@@ -1,7 +1,7 @@
 """core.graph — cœur de graphe GÉNÉRIQUE, data-shape-agnostique (stdlib-pur, zéro import taskmap).
 
 Primitives de séquencement d'un DAG de tasks, consommables **cross-repo** : le vault les nourrit avec ses
-records STAMP (`graph.load_tasks` → `classify`), un tiers (le cockpit) les nourrit avec ses propres rows
+records STAMP (`graph.load_tasks` → `classify`), un tiers (le forgemaster) les nourrit avec ses propres rows
 projetés (SQLite). Le cœur ne connaît NI le markdown, NI les slots STAMP, NI le vocab métier — juste la forme
 de record minimale ci-dessous. C'est le foyer public annoncé par `core/__init__` (« à enrichir au port du
 moteur »).
@@ -18,7 +18,7 @@ moteur »).
 
 Deux apports par rapport au port vault d'origine :
   1. `detect_cycles` DÉPLACÉE ici (re-exportée par `taskmap.graph` pour la back-compat) ;
-  2. **`eff_prio`** GRADUÉE depuis le fork cockpit (`task-graph-v1` adapté) : la **priorité effective
+  2. **`eff_prio`** GRADUÉE depuis le fork forgemaster (`task-graph-v1` adapté) : la **priorité effective
      transitive** — une task de faible priorité qui débloque une task plus prioritaire remonte — devient le
      rang canonique des DEUX consommateurs (distillation-vers-le-centre).
 """
@@ -55,7 +55,7 @@ def detect_cycles(index: dict[str, dict]) -> set[str]:
 def eff_prio(index: dict[str, dict], prio: dict[str, int]) -> dict[str, int]:
     """Priorité **effective transitive** : `eff(t) = min(rang propre, min sur dépendants transitifs)`.
 
-    Une task de faible priorité qui débloque une task plus prioritaire remonte (gradué du fork cockpit).
+    Une task de faible priorité qui débloque une task plus prioritaire remonte (gradué du fork forgemaster).
     `prio` = vocab ORDONNÉ (P0=0…) ; priorité hors-vocab ⇒ `len(prio)` (fail-soft, derrière tout le monde).
     `depends_on` lu en `.get(...)` (un record sans dépendances = task-feuille, eff == rang propre). Récursion
     sur les arêtes INVERSES (`dependents`), mémoïsée, garde de pile anti-cycle."""
@@ -83,8 +83,8 @@ def eff_prio(index: dict[str, dict], prio: dict[str, int]) -> dict[str, int]:
 def rank_key(t: dict, effp: dict[str, int]) -> tuple:
     """Ordre total canonique : priorité effective ↑, optionnel après, création ↑, id (tiebreak, zéro ex-æquo).
 
-    Pour un row cockpit (`optional` toujours 0, `id`≡`slug`) le rang se réduit à `(eff, created, id)` —
-    l'ordre du fork cockpit PRÉSERVÉ. Pour le vault, gain de `eff_prio` sur l'ancien rang plat."""
+    Pour un row forgemaster (`optional` toujours 0, `id`≡`slug`) le rang se réduit à `(eff, created, id)` —
+    l'ordre du fork forgemaster PRÉSERVÉ. Pour le vault, gain de `eff_prio` sur l'ancien rang plat."""
     return (effp[t["id"]], 1 if t.get("optional") else 0, t.get("created") or "9999-99-99", t["id"])
 
 

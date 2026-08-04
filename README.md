@@ -1,61 +1,75 @@
 # task-map
 
-> Moteur **déterministe** de liaison des tasks à leurs ancrages — le protocole **STAMP**. Pour ancrer chaque
-> mission dans le tissu du travail (axe north-star · épic servi/débloqué · blueprint appliqué) plutôt que dans
-> une liste mtime plate.
+> A **deterministic engine over a graph of missions.** It reads task files where they already live, ranks
+> what is actually ready to be worked on, and links each mission to the anchors that justify it — the
+> **STAMP** protocol: which north-star axis it serves, which epic it serves or unblocks, which blueprint it
+> applies.
 
-**Statut : privé · opérationnel (P0→P6 livrés — moteur porté, verbes en service).**
+**Status: pre-1.0** — the engine is complete and the CLI surface is frozen; the output envelope is a
+versioned inter-repo contract (see [`docs/schema-contract.md`](./docs/schema-contract.md)).
 
-6ᵉ outil de la famille `-map` (code-map · docs-map · front-map · bundle-map · mcp-catalogs). Outil **autonome**,
-sans service ni réseau : un CLI qui lit les tasks **en live** et rend du JSON stable, consommé par le hook
-`session-start` du vault et (à terme) le cockpit.
+A flat list of task files sorted by modification time tells you what changed, not what to do next. task-map
+answers the second question: it resolves the dependency DAG, propagates priority through it (a low-priority
+task that unblocks an urgent one rises), separates *ready* from *blocked*, and reports the links that have
+gone dead.
 
-## Verbes
+The sixth tool in the `-map` family (`code-map` · `docs-map` · `front-map` · `bundle-map` ·
+`forgemaster-catalogs`). A **standalone CLI**: no service, no network, no daemon, and no mandatory
+dependency — it reads your task files live and prints stable JSON.
 
-| Verbe | Rôle | Statut |
-|---|---|---|
-| `taskmap context <slug>` | les 3 liaisons STAMP d'une task : axe + épic servi/débloqué + blueprint | P5 ✓ |
-| `taskmap rollup axis <nom>` | agrège tout le travail sous un axe north-star | P5 ✓ |
-| `taskmap link <slug> <ancre…>` | pose un slot STAMP (écriture atomique, jamais de commit) | P4 ✓ |
-| `taskmap unlink <slug> <ancre…>` | retire un slot STAMP | P4 ✓ |
-| `taskmap doctor` | cohérence des liaisons (blueprint mort, épic inexistant, axe non résolu) | P5 ✓ |
-| `taskmap --schema-version` | version du contrat de sortie (négociation consommateur) | P0 ✓ |
+## What this is *not*
 
-La **structure** de la CLI est figée depuis P0 et le moteur est porté : les six surfaces ci-dessus
-répondent. `taskmap doctor --root <vault>` vérifie 670 tasks sans problème sur le vault de référence.
+- **Not a task tracker, and not a UI.** It has no store of its own and no web surface. Your tasks stay
+  markdown files in your repository; this reads them.
+- **Not a build step.** There is no derived index and no cache to refresh — the task corpus is tiny, so it
+  is read **live** on every call. No `build`, no `--out`, no index-missing guard.
+- **It never touches git.** Writes (`link` / `unlink`) put the file on disk and stop there. The dirty,
+  uncommitted file is the hand-off; a human — or an orchestrator — commits it.
+- **Not project-specific.** Anything that varies between repositories is declared in
+  [`.taskmap.toml`](./.taskmap.toml) (generic defaults if it is absent). No hard-coded path, no assumed
+  vocabulary.
+- **Not a network client.** Resolving a blueprint reference through an MCP server is an **optional
+  integration that degrades honestly** — unreachable means it says so, never that it invents an answer.
 
-## Principes
+## Verbs
 
-- **Cœur stdlib-pur** : aucune dépendance obligatoire → installable partout, offline, sans compilation. La
-  résolution des refs blueprint via le MCP `mcp-catalogs` (P5) est une **intégration optionnelle à dégradation
-  honnête**, jamais une dépendance dure.
-- **Enveloppe de sortie figée** (`{ok, schema_version}`, rc 0 pour lecture) : contrat inter-repos — cf.
-  [`docs/schema-contract.md`](./docs/schema-contract.md).
-- **Lecture live, pas d'index dérivé** : le corpus tasks est minuscule (comme bundle_map lit ses manifestes) →
-  pas de `build`, pas de cache à rafraîchir.
-- **Générique par configuration** : ce qui varie d'un vault à l'autre se déclare dans un
-  [`.taskmap.toml`](./.taskmap.toml) (défauts génériques si absent). Aucun chemin en dur.
-- **Jamais de git** : l'écriture (P4) pose le fichier ; un humain / le cockpit commit.
+| Verb | What it does |
+|---|---|
+| `taskmap context <slug>` | the STAMP links of one task: axis + epic served/unblocked + blueprint |
+| `taskmap rollup axis <name>` | aggregates every mission under one north-star axis |
+| `taskmap link <slug> <anchor…>` | sets a STAMP slot (atomic write, never a commit) |
+| `taskmap unlink <slug> <anchor…>` | removes a STAMP slot |
+| `taskmap doctor` | link coherence: dead blueprint, unknown epic, unresolved axis |
+| `taskmap --schema-version` | output-contract version, for consumer negotiation |
 
-## Installation
+`taskmap doctor --root <path>` checks 670 tasks on the reference corpus without a hitch.
+
+## Install
 
 ```bash
-pip install -e .            # cœur stdlib-pur, zéro dépendance
+pip install -e .            # stdlib-pure core, zero dependencies
 pip install -e '.[dev]'     # + pytest / ruff / mypy
 ```
 
-Résolution de racine générique : `--root <path>`, sinon `$TASKMAP_ROOT`, sinon remontée depuis le cwd jusqu'au
-repère (`.taskmap.toml` ou `.git/`).
+Root resolution is generic: `--root <path>`, else `$TASKMAP_ROOT`, else walk up from the current directory
+to the nearest marker (`.taskmap.toml` or `.git/`).
 
-## Architecture
+## Design notes
 
-Voir [`docs/architecture.md`](./docs/architecture.md) (protocole STAMP + couches) et
-[`docs/schema-contract.md`](./docs/schema-contract.md) (enveloppe de sortie figée).
+- **Stdlib-pure core** — installable anywhere, offline, with nothing to compile.
+- **Frozen output envelope** (`{ok, schema_version}`, exit 0 for reads): an inter-repo contract, see
+  [`docs/schema-contract.md`](./docs/schema-contract.md).
+- **Live read, no derived index** — the corpus is small enough that a build step would only add a way to be
+  stale.
+- **No silent cap** — a truncated result says it was truncated.
 
-## Licence
+Architecture, the STAMP protocol and the deliberate boundaries:
+[`docs/architecture.md`](./docs/architecture.md).
 
-**Apache-2.0** — voir [`LICENSE`](./LICENSE) et [`NOTICE`](./NOTICE).
+## License
 
-Installation, exécution, modification et redistribution sont accordées, y compris pour un usage
-commercial. La §6 ne concède aucun droit sur le **nom** ; la clause de brevets (§3) accorde les brevets
-nécessaires et se retire de plein droit contre qui attaque le projet en contrefaçon.
+**Apache-2.0** — see [`LICENSE`](./LICENSE) and [`NOTICE`](./NOTICE).
+
+Installing, running, modifying and redistributing are all granted, commercial use included. §6 grants no
+right to the **name**; the patent clause (§3) grants the patents you need and terminates automatically
+against anyone who sues the project for infringement.

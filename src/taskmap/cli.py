@@ -31,7 +31,7 @@ from taskmap.graph import load_tasks
 
 class _SchemaVersionAction(argparse.Action):
     """`--schema-version` : imprime la version du CONTRAT (enveloppe + modèle STAMP) et sort — comme
-    `--version` mais pour la négociation inter-repos. Un consommateur (hook session-start, cockpit)
+    `--version` mais pour la négociation inter-repos. Un consommateur (hook session-start, forgemaster)
     l'interroge pour câbler sa clé de cache / vérifier la compat, avant tout appel de lecture."""
 
     def __init__(self, option_strings, dest, **kw):  # noqa: ANN001

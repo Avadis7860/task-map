@@ -46,7 +46,7 @@ commit). Task absente / ancre invalide (`AuthoringError`) → `ok:false` (rc 0).
 
 `src/taskmap/cli.py:32` · action argparse de `--schema-version`.
 Imprime `SCHEMA_VERSION` et sort (comme `--version` mais pour l'inter-repos). Un consommateur (hook
-session-start, cockpit) l'interroge pour câbler sa clé de cache / vérifier la compat **avant** tout appel.
+session-start, forgemaster) l'interroge pour câbler sa clé de cache / vérifier la compat **avant** tout appel.
 
 ## Zones non détaillées
 

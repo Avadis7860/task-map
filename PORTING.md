@@ -33,7 +33,7 @@ motor read+WRITE confiné, MCP link-by-reference, blueprint `deterministic-tooli
 | verbes `context`/`rollup`/`doctor` + `link`/`unlink` | P5 | **porté** (deep-dive `taskmap-mcp-degradation-contract` résolu ; résolution blueprint **déléguée** + seam) |
 | wrapper vault `task_map.py` | P6 | à faire (reste au vault) |
 | rewire hook `session-start` | P7 | à faire (reste au vault) |
-| backfill + adoption cockpit | P8 | à faire |
+| backfill + adoption forgemaster | P8 | à faire |
 
 ## Correctifs de généralisation appliqués
 
@@ -71,7 +71,7 @@ motor read+WRITE confiné, MCP link-by-reference, blueprint `deterministic-tooli
   (le parseur `frontmatter` est lossy → un round-trip bruiterait le git), slots STAMP au **rang canonique**
   (après `depends_on`), **`axis` jamais écrit** (dérivé, I1), **séparation pur/impur** (`plan_edit(text)→EditPlan`
   pur testable in-memory + `selftest` ; `apply_edit(path, plan)` = seule I/O, atomique, no-op si inchangé),
-  **jamais de commit** (le fichier dirty est le hand-off vers la couche git/cockpit). Les verbes CLI `link`/
+  **jamais de commit** (le fichier dirty est le hand-off vers la couche git/forgemaster). Les verbes CLI `link`/
   `unlink` qui consomment ce moteur restent P5.
 
 - **#6 — verbes de lecture + résolution blueprint déléguée (P5)** : nouveau module `taskmap/context.py`
@@ -83,7 +83,7 @@ motor read+WRITE confiné, MCP link-by-reference, blueprint `deterministic-tooli
   `taskmap-mcp-degradation-contract` résolu, décision vault `2026-07-14--…`) : task-map émet le ref +
   `resolved:false` + raison honnête par défaut et expose un **seam d'injection** `resolve_blueprint`, mais ne
   compose **jamais** le MCP lui-même — il reste offline / stdlib-pur / sans secret (le consommateur, une session
-  Claude ou le cockpit, a déjà l'accès MCP). `link`/`unlink` consomment `authoring` (grammaire d'ancre
+  Claude ou le forgemaster, a déjà l'accès MCP). `link`/`unlink` consomment `authoring` (grammaire d'ancre
   `clé=valeur[:posture]`, `--dry-run`, `axis=` refusé).
 
 ## Preuve de non-régression (P1 · re-vérifiée P2)
