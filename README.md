@@ -17,6 +17,8 @@ have gone dead.
 under an axis, and audits the coherence of the graph. The **readiness ranking** — DAG resolution, priority
 propagation, ready-vs-blocked — is a **Python API** (`taskmap.classify`, `taskmap.core.graph`) meant to be
 called by an orchestrator. It has no verb of its own today.
+[`forgemaster`](https://github.com/Avadis7860/forgemaster) is one such caller, and the reason that API
+exists; it is not required to use this tool.
 
 A **standalone tool**: no service, no daemon, no network, and no runtime dependency. It reads your task
 files live and prints stable JSON.
