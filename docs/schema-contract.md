@@ -59,6 +59,28 @@ appliqué (ref + verdict). Charge utile :
   un vide/`empty:true` → **liaison morte signalée**, jamais inventée. Contrat : décision vault
   `corpus/decision/projects/2026-07-14--taskmap-mcp-degradation-contract.md`.
 
+### Le verdict blueprint **détaché** — `blueprint_verdict(bp, resolve)`
+
+Le seam a **deux points d'entrée publics**, et le second existe pour les consommateurs dont les refs ne
+viennent pas d'un frontmatter :
+
+| Entrée | Quand | Ce qu'il faut fournir |
+|---|---|---|
+| `build_context(…, resolve_blueprint=…)` / `doctor(…)` | la ref vit dans le STAMP d'une task du corpus | la racine + le slug |
+| `blueprint_verdict(bp, resolve)` | la ref vient d'ailleurs (base du consommateur, saisie, API) | `{"id": …, "posture": …}` |
+
+```python
+from taskmap import blueprint_verdict
+
+blueprint_verdict({"id": "un-gate", "posture": None}, None)
+# {'id': 'un-gate', 'posture': None, 'resolved': False,
+#  'reason': 'résolution déléguée au consommateur MCP (non résolu localement)'}
+```
+
+Même fonction, même verdict, mêmes garanties — dont celle qui compte : un resolver qui ne trouve rien rend
+une **liaison morte**, jamais une réponse inventée. Elle est publique **pour que cette règle ne soit pas
+réécrite** chez chaque consommateur ; c'est ce qui la rendrait divergente.
+
 ## `rollup axis <nom>` — agrégat d'un axe *(figée P5)*
 
 ```jsonc

@@ -15,7 +15,7 @@ have gone dead.
 
 **Two surfaces, and they differ.** The **CLI** reads and writes the STAMP links of a task, aggregates work
 under an axis, and audits the coherence of the graph. The **readiness ranking** — DAG resolution, priority
-propagation, ready-vs-blocked — is a **Python API** (`taskmap.classify`, `taskmap.core.graph`) meant to be
+propagation, ready-vs-blocked — is a **Python API** (`taskmap.classify`, `taskmap.graph`) meant to be
 called by an orchestrator. It has no verb of its own today.
 [`forgemaster`](https://github.com/Avadis7860/forgemaster) is one such caller, and the reason that API
 exists; it is not required to use this tool.

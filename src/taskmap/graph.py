@@ -22,11 +22,17 @@ import re
 from pathlib import Path
 
 from taskmap.config import Config  # vocab (priorités/services/catégories) + emplacement des tasks
-from taskmap.core.graph import detect_cycles  # cœur générique (détection de cycles) — re-exporté ici
+from taskmap.core.graph import detect_cycles, eff_prio, rank_ready  # cœur générique — re-exporté ici
 from taskmap.frontmatter import split_frontmatter  # home unique du parsing frontmatter (stdlib-pur)
 
-__all__ = [  # `detect_cycles` re-exportée du cœur pour la back-compat (imports historiques + test_graph)
+# Ce module est le **foyer public** du moteur de graphe. `core.graph` en est l'implémentation générique
+# (stdlib-pure, data-shape-agnostique) : un consommateur importe ICI, jamais `taskmap.core.*` — le socle
+# reste ainsi libre de bouger sans casser personne. Toute la famille `-map` nomme `core/` son socle interne ;
+# publier le nôtre par le chemin `core` ferait porter deux contrats opposés au même mot.
+__all__ = [  # `detect_cycles`/`eff_prio`/`rank_ready` re-exportées du cœur : c'est l'API de disponibilité
     "detect_cycles",
+    "eff_prio",
+    "rank_ready",
     "load_tasks",
     "derive_phase_deps",
     "reconcile_epics",

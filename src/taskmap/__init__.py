@@ -16,14 +16,14 @@ from taskmap.anchors import build_stamp_edit
 from taskmap.authoring import EditPlan, StampEdit, apply_edit, plan_edit
 from taskmap.classify import classify, evaluate_dod_criteria, evaluate_trigger
 from taskmap.config import Config
-from taskmap.context import build_context, doctor, extract_stamp, rollup_axis
-from taskmap.graph import ENGINE, load_tasks
+from taskmap.context import blueprint_verdict, build_context, doctor, extract_stamp, rollup_axis
+from taskmap.graph import ENGINE, eff_prio, load_tasks, rank_ready
 from taskmap.northstar import Manifest, axis_for_epic, load_manifest, validate
 
 __all__ = ["ENGINE", "SCHEMA_VERSION", "Config", "EditPlan", "Manifest", "StampEdit", "__version__",
-           "apply_edit", "axis_for_epic", "build_context", "build_stamp_edit", "classify", "doctor",
-           "evaluate_dod_criteria", "evaluate_trigger", "extract_stamp", "load_manifest", "load_tasks",
-           "plan_edit", "rollup_axis", "validate"]
+           "apply_edit", "axis_for_epic", "blueprint_verdict", "build_context", "build_stamp_edit",
+           "classify", "doctor", "eff_prio", "evaluate_dod_criteria", "evaluate_trigger", "extract_stamp",
+           "load_manifest", "load_tasks", "plan_edit", "rank_ready", "rollup_axis", "validate"]
 
 __version__ = "0.1.0"
 

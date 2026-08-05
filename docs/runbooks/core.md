@@ -1,10 +1,15 @@
 # core — runbook (socle générique stdlib-pur, consommable cross-repo)
 
-`src/taskmap/core/` — primitives sans dépendance, **data-shape-agnostiques**. `core/graph` est le foyer public
-du **moteur de séquencement** annoncé pour un usage cross-repo : le vault le nourrit avec ses records STAMP, un
-tiers (le forgemaster) avec ses propres rows projetés (SQLite) → **une seule copie vivante du moteur, dé-fork par
-import runtime**. Le cœur ne connaît ni markdown, ni slots STAMP, ni vocab métier — juste une forme de record
+`src/taskmap/core/` — primitives sans dépendance, **data-shape-agnostiques**. `core/graph` **implémente** le
+**moteur de séquencement** consommable cross-repo : le vault le nourrit avec ses records STAMP, un tiers (le
+forgemaster) avec ses propres rows projetés (SQLite) → **une seule copie vivante du moteur, dé-fork par import
+runtime**. Le cœur ne connaît ni markdown, ni slots STAMP, ni vocab métier — juste une forme de record
 minimale (`id`/`depends_on`/`priority`/`created`/`optional`), lue **défensivement**.
+
+> **Ce dossier n'est pas une adresse publique.** `detect_cycles`/`eff_prio`/`rank_ready` se consomment par
+> **`taskmap.graph`**, qui les ré-exporte. `core/` est le socle interne — même sens que dans les autres repos
+> `-map`, où il est explicitement une copie vendorisée. Un consommateur qui écrit `taskmap.core.graph`
+> s'accroche à un emplacement, pas à un contrat.
 
 ## core.graph.eff_prio() — priorité effective transitive
 

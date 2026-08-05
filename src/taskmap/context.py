@@ -11,7 +11,11 @@ verdict est `resolved:false` + raison honnête (jamais inventé). Un **seam d'in
 permet à un consommateur programmatique de résoudre. Contrat : décision vault
 `corpus/decision/projects/2026-07-14--taskmap-mcp-degradation-contract.md`.
 
-Séparation pur/impur (I4) : `extract_stamp`/`assemble_context`/`_blueprint_verdict` sont **purs** (testés par
+Deux façons de consommer ce seam, et elles sont toutes deux publiques : passer `resolve_blueprint` à
+`build_context`/`doctor` (le slot est lu d'une task du corpus), **ou** appeler `blueprint_verdict` seule sur
+une ref qu'on tient déjà — c'est ce que fait un orchestrateur dont les refs vivent dans sa propre base.
+
+Séparation pur/impur (I4) : `extract_stamp`/`assemble_context`/`blueprint_verdict` sont **purs** (testés par
 `selftest`) ; `build_context`/`rollup_axis`/`doctor` sont les coquilles qui lisent le corpus tasks.
 """
 from __future__ import annotations
@@ -69,11 +73,17 @@ def _blueprint(v: Any) -> dict | None:
     return None
 
 
-def _blueprint_verdict(bp: dict | None, resolve: BlueprintResolver | None) -> dict | None:
-    """Verdict du slot blueprint. Défaut (aucun resolver) : `resolved:false` + raison de délégation honnête.
+def blueprint_verdict(bp: dict | None, resolve: BlueprintResolver | None) -> dict | None:
+    """Verdict d'un slot blueprint — **primitive publique**, utilisable seule, hors de `build_context`.
 
-    Si `resolve` est fourni, on l'appelle : un dict véridique → `resolved:true` (+ champs fusionnés) ; un
-    None/{} → liaison morte signalée ; une exception → échec signalé (jamais propagée). Jamais inventé.
+    Défaut (aucun resolver) : `resolved:false` + raison de délégation honnête. Si `resolve` est fourni, on
+    l'appelle : un dict véridique → `resolved:true` (+ champs fusionnés) ; un None/{} → liaison morte
+    signalée ; une exception → échec signalé (jamais propagée). Jamais inventé.
+
+    PUBLIQUE parce qu'un orchestrateur en a besoin **détachée** : ses refs blueprint viennent de sa propre
+    base, pas d'un frontmatter, donc il n'a pas de task à faire assembler — juste une ref à juger. Sans ça
+    il ré-écrirait la règle « rien de résolu → liaison morte, jamais une réponse inventée », qui est
+    précisément la promesse que ce paquet fait à ses lecteurs.
     """
     if bp is None:
         return None
@@ -96,15 +106,19 @@ def _blueprint_verdict(bp: dict | None, resolve: BlueprintResolver | None) -> di
     return out
 
 
-def assemble_context(slug: str, slots: dict, axis: str | None, blueprint_verdict: dict | None) -> dict:
-    """Assemble le payload `context` figé : slots extraits + axe dérivé + verdict blueprint. PUR."""
+def assemble_context(slug: str, slots: dict, axis: str | None, verdict: dict | None) -> dict:
+    """Assemble le payload `context` figé : slots extraits + axe dérivé + verdict blueprint. PUR.
+
+    Le paramètre s'appelle `verdict`, pas `blueprint_verdict` : depuis que la primitive est publique, ce
+    nom-là masquerait la fonction du module à l'intérieur de ce corps.
+    """
     return {
         "slug": slug,
         "axis": axis,
         "epic": slots["epic"],
         "serves": slots["serves"],
         "unblocks": slots["unblocks"],
-        "blueprint": blueprint_verdict,
+        "blueprint": verdict,
         "template": slots["template"],
     }
 
@@ -141,7 +155,7 @@ def build_context(root: Path | str, slug: str, config: Config | None = None,
     slots = extract_stamp(_read(root, rec))
     manifest = _load_manifest(root, config)
     axis = northstar.axis_for_epic(manifest, slots["epic"]) if (manifest and slots["epic"]) else None
-    verdict = _blueprint_verdict(slots["blueprint"], resolve_blueprint)
+    verdict = blueprint_verdict(slots["blueprint"], resolve_blueprint)
     return assemble_context(slug, slots, axis, verdict)
 
 
@@ -200,7 +214,7 @@ def doctor(root: Path | str, config: Config | None = None,
         if epic and manifest is not None and epic not in manifest.epics:
             problems.append(f"STAMP : {tid} → epic '{epic}' hors carte north-star (axe non résolu)")
         if resolve_blueprint is not None and slots["blueprint"]:
-            verdict = _blueprint_verdict(slots["blueprint"], resolve_blueprint)
+            verdict = blueprint_verdict(slots["blueprint"], resolve_blueprint)
             if verdict and not verdict["resolved"]:
                 problems.append(
                     f"STAMP : {tid} → blueprint '{verdict['id']}' non résolu ({verdict['reason']})")
@@ -244,13 +258,13 @@ def selftest() -> None:
     assert empty["epic"] is None and empty["serves"] == [] and empty["blueprint"] is None, empty
 
     # verdict blueprint : défaut délégué (non résolu, raison honnête).
-    v_default = _blueprint_verdict(slots["blueprint"], None)
+    v_default = blueprint_verdict(slots["blueprint"], None)
     assert v_default is not None and v_default["resolved"] is False and v_default["reason"], v_default
     # seam injecté qui résout → resolved:true + champs fusionnés.
-    v_ok = _blueprint_verdict(slots["blueprint"], lambda _bid: {"title": "Le gate"})
+    v_ok = blueprint_verdict(slots["blueprint"], lambda _bid: {"title": "Le gate"})
     assert v_ok is not None and v_ok["resolved"] is True and v_ok["title"] == "Le gate", v_ok
     # resolver qui ne trouve rien → liaison morte signalée, jamais inventée.
-    v_dead = _blueprint_verdict(slots["blueprint"], lambda _bid: None)
+    v_dead = blueprint_verdict(slots["blueprint"], lambda _bid: None)
     assert v_dead is not None and v_dead["resolved"] is False, v_dead
 
     # assemblage : axe injecté rendu tel quel.

@@ -81,29 +81,29 @@ def test_blueprint_bare_scalar_tolerated():
 
 
 def test_blueprint_verdict_default_is_delegated():
-    v = context._blueprint_verdict({"id": "g", "posture": "applies"}, None)
+    v = context.blueprint_verdict({"id": "g", "posture": "applies"}, None)
     assert v is not None and v["resolved"] is False and v["reason"]
     assert v["id"] == "g" and v["posture"] == "applies"
 
 
 def test_blueprint_verdict_injected_resolver():
-    v = context._blueprint_verdict({"id": "g", "posture": "applies"}, lambda _b: {"title": "T"})
+    v = context.blueprint_verdict({"id": "g", "posture": "applies"}, lambda _b: {"title": "T"})
     assert v is not None and v["resolved"] is True and v["title"] == "T" and v["reason"] == ""
 
 
 def test_blueprint_verdict_dead_and_crashing_resolver():
-    dead = context._blueprint_verdict({"id": "g", "posture": None}, lambda _b: None)
+    dead = context.blueprint_verdict({"id": "g", "posture": None}, lambda _b: None)
     assert dead is not None and dead["resolved"] is False
 
     def _boom(_b):
         raise RuntimeError("mcp down")
 
-    crashed = context._blueprint_verdict({"id": "g", "posture": None}, _boom)
+    crashed = context.blueprint_verdict({"id": "g", "posture": None}, _boom)
     assert crashed is not None and crashed["resolved"] is False and "échouée" in crashed["reason"]
 
 
 def test_blueprint_verdict_none_slot():
-    assert context._blueprint_verdict(None, None) is None
+    assert context.blueprint_verdict(None, None) is None
 
 
 # --- coquilles (mini-vault jetable) -----------------------------------------------------------------------

@@ -4,6 +4,33 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versionnage
 
 ## [Non publié]
 
+### Ce que le README annonce comme API s'importe désormais comme une API
+- **`blueprint_verdict` devient publique** (`context.py`, ex-`_blueprint_verdict`) et rejoint `__all__`. Le
+  README promet à ses lecteurs qu'« a resolver that finds nothing yields a dead-link report, never an
+  invented answer » : cette promesse était **implémentée par un nom privé**. Le seul consommateur
+  programmatique connu — le forgemaster — rend le verdict sur des refs tirées de **sa propre base**, sans
+  task markdown à assembler : le chemin public documenté (`resolve_blueprint` passé à `build_context`) ne
+  couvrait donc pas son cas, et il attrapait le nom privé. Publier la primitive évite que la règle « liaison
+  morte, jamais de réponse inventée » soit ré-écrite — donc divergente — chez chaque consommateur.
+  `docs/schema-contract.md` décrit les **deux** points d'entrée du seam ; `docs/runbooks/context.md` suit.
+- **`eff_prio` et `rank_ready` se consomment par `taskmap.graph`**, qui les ré-exporte du cœur — comme
+  `detect_cycles` le faisait déjà. Le README nommait `taskmap.core.graph` comme l'API de classement de
+  disponibilité, or `core/` désigne un socle **interne** partout ailleurs dans la famille `-map` (code-map,
+  docs-map et front-map le documentent comme une copie vendorisée). Le même mot portait deux contrats
+  opposés : un lecteur suivant le README s'accrochait à un **emplacement** au lieu d'un contrat, et gelait un
+  dossier dont la raison d'être est de pouvoir bouger. Le cœur reste générique et cross-repo — seule son
+  **adresse publique** change. `README.md`, `docs/architecture.md` et `docs/runbooks/core.md` suivent.
+- **Aucun retrait, aucun renommage de champ de sortie** : le contrat de schéma ne bouge pas
+  (`SCHEMA_VERSION` inchangé), l'enveloppe non plus. Ce lot **ajoute** des adresses publiques.
+- **Effet de bord traité, pas subi** : le paramètre `blueprint_verdict` d'`assemble_context` masquait la
+  fonction du module dès qu'elle a perdu son `_` → renommé `verdict` (appelé positionnellement partout,
+  absent du `__all__` du paquet).
+- **Deux tests épinglent la surface** (`test_skeleton.py`) : l'API annoncée s'importe depuis la racine du
+  paquet, et rien de privé ne se faufile dans `__all__`. Sans eux, la régression se réinstalle en silence.
+- Trouvé par la garde cross-repo du vault (`check_cross_repo_contracts`), qui mesure les imports d'un repo
+  frère vers une surface non publique. Les entrées antérieures de ce fichier citent encore
+  `_blueprint_verdict` : **épargnées** — c'est l'histoire, elle a eu lieu sous ce nom.
+
 ### La surface publique s'adresse à un inconnu — README + CONTRIBUTING en US, et le consommateur reprend son nom
 - **`README.md` réécrit en anglais**, pas traduit : un lecteur extérieur a besoin de savoir ce que l'outil
   **n'est pas** (pas un tracker ni une UI, pas une étape de build, jamais de git, rien de spécifique-projet,

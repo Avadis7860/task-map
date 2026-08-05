@@ -46,8 +46,9 @@ dupliquée). Le modèle de données figé (slots, cardinalités, vocab) est le *
   jusque-là codés en dur dans `graph.py`. Défauts **permissifs** : sans fichier, services/catégories sont vides
   ⇒ aucune validation ni warning (un repo tiers n'est jamais réprimandé pour un vocab non déclaré) ; le vault
   déclare son vocab FERMÉ dans son `.taskmap.toml` et garde ses avertissements. Zéro dépendance.
-  - **`core/graph`** — le **cœur de graphe GÉNÉRIQUE** (stdlib-pur, zéro import taskmap), foyer public
-    consommable **cross-repo** : `detect_cycles` (déplacée de `graph.py`, re-exportée pour la back-compat),
+  - **`core/graph`** — le **cœur de graphe GÉNÉRIQUE** (stdlib-pur, zéro import taskmap), **implémentation**
+    du moteur consommable cross-repo ; il se **publie par `taskmap.graph`**, jamais par son propre chemin
+    (cf. la note d'import ci-dessous) : `detect_cycles` (déplacée de `graph.py`, re-exportée pour la back-compat),
     **`eff_prio`** (priorité **effective transitive** : une task qui débloque plus prioritaire remonte) et le
     **rang canonique** `rank_key`/`rank_ready`/`resolve_next`. Ce cœur ne connaît ni markdown ni STAMP — juste
     une forme de record minimale (`id`/`depends_on`/`priority`/`created`/`optional`). Le vault le nourrit via
@@ -59,7 +60,15 @@ dupliquée). Le modèle de données figé (slots, cardinalités, vocab) est le *
     `dependencies=[]`) ; ne couvre que le sous-ensemble utilisé (maps, seqs, flow-seqs, scalaires typés
     dont dates→`datetime.date`, blocs `|`/`>`). Types calqués sur PyYAML 1.1.
   - **`graph`** charge les 3 buckets (live), construit le DAG `depends_on`, dérive les arêtes de phases
-    d'épic, détecte les cycles, réconcilie les checklists. Chemin `.claude/tasks` paramétrable.
+    d'épic, détecte les cycles, réconcilie les checklists. Chemin `.claude/tasks` paramétrable. C'est aussi
+    le **foyer public du moteur** : il ré-exporte `detect_cycles`/`eff_prio`/`rank_ready` du cœur.
+
+  > **Note d'import (frontière publique).** Un consommateur importe `taskmap.graph`, **jamais
+  > `taskmap.core.*`**. Le mot `core` désigne un socle **interne** dans toute la famille `-map`
+  > (code-map/docs-map/front-map le documentent comme une copie vendorisée) : le publier par ce chemin-là
+  > ferait porter deux contrats opposés au même mot, et gèlerait un dossier dont la raison d'être est de
+  > pouvoir bouger. Le cœur reste générique et cross-repo ; c'est son **adresse** qui est publique, pas son
+  > emplacement.
   - **`classify`** classe chaque task et évalue les prédicats `trigger` (réveil) / `dod_criteria` (clôture),
     grammaire fermée déterministe. Expose les helpers de requête (ready/burndown/tree_stats).
 

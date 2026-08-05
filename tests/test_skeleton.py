@@ -19,6 +19,29 @@ def test_package_imports():
     assert taskmap.SCHEMA_VERSION == "0.1.0"
 
 
+def test_public_api_is_reachable_from_the_package_root():
+    """L'API que le README annonce s'importe depuis `taskmap`, sans passer par un module interne.
+
+    Deux surfaces sont nommées au lecteur : le **classement de disponibilité** (`classify` + le moteur de
+    graphe) et le **verdict blueprint** (la promesse « jamais une réponse inventée »). Un consommateur qui
+    doit descendre dans `taskmap.core.*` ou attraper un `_nom` pour les atteindre lit une promesse que le
+    paquet ne tient pas — c'est ce qui était arrivé aux trois symboles ci-dessous.
+    """
+    from taskmap import blueprint_verdict, classify, eff_prio, rank_ready
+
+    for fn in (blueprint_verdict, classify, eff_prio, rank_ready):
+        assert callable(fn)
+
+
+def test_public_surface_declares_no_private_name():
+    """Rien de privé ne se faufile dans `__all__` — la garde qui empêche la régression de se réinstaller."""
+    import taskmap
+
+    assert not [n for n in taskmap.__all__ if n.startswith("_") and n != "__version__"]
+    for name in taskmap.__all__:
+        assert hasattr(taskmap, name), f"`{name}` déclaré public mais absent du package"
+
+
 def test_cli_parser_builds_and_lists_subcommands():
     from taskmap.cli import build_parser
 
