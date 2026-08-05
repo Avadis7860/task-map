@@ -7,8 +7,11 @@ __pycache__/
 .eggs/
 build/
 dist/
-.venv/
-venv/
+# Sans slash final : le `work-loop` travaille en WORKTREE, et la façon normale d'y avoir un venv est de
+# SYMLINKER celui du dépôt principal. Un motif `.venv/` ne matche que des répertoires — le symlink passait
+# donc à travers, et un `git add -A` aurait versionné un lien vers un chemin absolu personnel.
+.venv
+venv
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
