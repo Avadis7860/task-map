@@ -60,6 +60,6 @@ et le verdict sont injectés tels quels.
 
 - `selftest` — l'auto-test du module : prouve que le contexte se construit et que le doctor répond sur un
   arbre témoin, sans dépendre d'un vault réel.
-- `_load_manifest` (`:114`, charge le manifeste si configuré + présent, None sinon), `_read` (`:127`),
+- `_load_manifest` (`:128`, charge le manifeste si configuré + présent, None sinon), `_read` (`:141`),
   `_scalar`/`_strlist`/`_blueprint` (`:54`–`:62`, normalisation) : coquilles/helpers triviaux. Le contrat de
   dégradation MCP : la décision vault citée en tête.

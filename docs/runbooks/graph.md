@@ -7,7 +7,7 @@ La classification d'état (triggers, DoD) vit dans `runbooks/classify.md`.
 
 ## load_tasks() — les 3 buckets → index {id: record} + warnings
 
-`src/taskmap/graph.py:96` · appelé par `classify`, `build_context`, `rollup_axis`, `doctor`, CLI edit.
+`src/taskmap/graph.py:102` · appelé par `classify`, `build_context`, `rollup_axis`, `doctor`, CLI edit.
 Entrées : `root`, `config` (None → `Config.load(root)`). rglob `tasks_subdir/{backlog,active,archive}/**/*.md`
 (reorg V2 : découvre `backlog/<service>/*.md`, `_inbox/`). **Invariant d'ordre** : archive chargé en dernier
 → **done écrase** un même id en backlog (le statut terminal fait foi). Par task : `split_frontmatter`, dérive
@@ -22,7 +22,7 @@ path). Signale : slug≠id, frontmatter absent/illisible, incohérence bucket↔
 
 ## derive_phase_deps() — les arêtes séquentielles d'une umbrella phasée
 
-`src/taskmap/graph.py:206` · appelé en queue de `load_tasks`.
+`src/taskmap/graph.py:212` · appelé en queue de `load_tasks`.
 Augmente **in-mémoire** le `depends_on` des membres d'une umbrella depuis son manifeste `phases:` (liste
 ordonnée d'étapes, chaque étape = liste d'ids parallèles). Chaque membre de l'étape N reçoit (union
 dédupliquée, ordre stable) **tous les ids des étapes < N** ; les membres d'une même étape ne dépendent PAS
@@ -31,7 +31,7 @@ l'un de l'autre. **Union** avec les `depends_on` explicites (jamais d'écrasemen
 
 ## reconcile_epics() — checklist DoD prose ↔ status réel
 
-`src/taskmap/graph.py:246` · appelé par `context.doctor` (advisory).
+`src/taskmap/graph.py:252` · appelé par `context.doctor` (advisory).
 PUR, read-only. Confronte la checklist `- [x] **P<n> — `slug`**` d'une umbrella (`phase_checklist`) au status
 RÉEL des sous-tasks. Trois cas → warning (dérive de PROSE ⇒ **toujours warn, jamais error**) : `[x]`+status≠done
 (case en avance), `[ ]`+status==done (case en retard), slug listé sans fichier (non matérialisée). En prime :
@@ -39,7 +39,7 @@ un membre `phases:` en `cancelled` → warning (il bloquerait l'aval à vie).
 
 ## Zones non détaillées (signalées)
 
-- `_normalize_phases` (`:60`), `_parse_phase_checklist` (`:86`), `_children` (`:235`), `_s` (`:55`) : helpers
+- `_normalize_phases` (`:66`), `_parse_phase_checklist` (`:92`), `_children` (`:241`), `_s` (`:61`) : helpers
   de normalisation/parsing internes, lisibles au fil du code. Le cœur générique du graphe (`detect_cycles`,
   `eff_prio`, rang) est **re-exporté** ici mais documenté dans `runbooks/core.md`. Le schéma du record :
   `docs/schema-contract.md`.
