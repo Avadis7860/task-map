@@ -10,6 +10,11 @@ minimale (`id`/`depends_on`/`priority`/`created`/`optional`), lue **défensiveme
 > **`taskmap.graph`**, qui les ré-exporte. `core/` est le socle interne — même sens que dans les autres repos
 > `-map`, où il est explicitement une copie vendorisée. Un consommateur qui écrit `taskmap.core.graph`
 > s'accroche à un emplacement, pas à un contrat.
+>
+> `rank_key` et `resolve_next` restent **internes** : aucun consommateur ne les demande aujourd'hui
+> (le forgemaster porte son propre `resolve_next`, qui délègue à `rank_ready`). On publie ce qui est
+> consommé — pas une surface qu'il faudra ensuite tenir sans lecteur pour la justifier. Le jour où un
+> consommateur en a besoin, la réponse est de les ré-exporter dans `taskmap.graph`, pas de descendre ici.
 
 ## core.graph.eff_prio() — priorité effective transitive
 
